@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>女子棒球 · 从入门到放弃</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+
+<body>
+    <!-- 主游戏区域 -->
+    <div class="game-box">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+            <button onclick="Game.showStartGameModal()" class="btn-primary">⚾ 开始新游戏</button>
+            <h1 style="margin: 0 0 0 0px; width: 200%;">⚾ 女子棒球 · 从入门到放弃</h1>
+        </div>
+
+        <div class="info-bar" id="dateInfo">日期：2024-03-08 (周六) | 状态：周末</div>
+        <div class="info-bar" id="actionInfo">工作日剩余行动：0 | 友谊赛：本周未预约</div>
+
+        <h3 style="font-size:16px; margin:10px 0 5px 0;">✨ <span id="founderNameDisplay">创始人</span> 的属性</h3>
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>精神力</h3>
+                <div class="stat-value" id="spirit" title="精力值：影响所有行动的消耗">0</div>
+                <div class="stat-float" id="spiritFloat"></div>
+            </div>
+            <div class="stat-card">
+                <h3>球技</h3>
+                <div class="stat-value" id="skill" title="球技：影响比赛胜率和招募成功率">0</div>
+                <div class="stat-float" id="skillFloat"></div>
+            </div>
+            <div class="stat-card">
+                <h3>人际关系</h3>
+                <div class="stat-value" id="relation" title="人际关系：影响球员忠诚度变化速度">0</div>
+                <div class="stat-float" id="relationFloat"></div>
+            </div>
+        </div>
+
+        <h3 style="font-size:16px; margin:10px 0 5px 0;">📊 <span id="teamNameDisplay">球队</span> 队属性</h3>
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>球员人数</h3>
+                <div class="stat-value" id="players" title="球员人数：不足5人游戏结束">0</div>
+                <div class="stat-float" id="playersFloat"></div>
+            </div>
+            <div class="stat-card">
+                <h3>队内气氛</h3>
+                <div class="stat-value" id="mood" title="队内气氛：影响比赛表现和球员忠诚度">0</div>
+                <div class="stat-float" id="moodFloat"></div>
+            </div>
+            <div class="stat-card">
+                <h3>球队实力</h3>
+                <div class="stat-value" id="teamLevel" title="球队实力：影响比赛胜率">0</div>
+                <div class="stat-float" id="teamLevelFloat"></div>
+            </div>
+        </div>
+
+        <div id="skillWarningArea" class="skill-warning" style="display: none;">
+            ⚠️ 你的球技低于10！人际关系、球队实力、队内气氛每天都会下降！
+        </div>
+        <div id="teamLevelWarningArea" class="team-level-warning" style="display: none;">
+            ⚠️ 球队实力低于10！人际关系、队内气氛、所有球员忠诚度每天都会大幅下降！
+        </div>
+
+        <div class="action-section">
+            <h4>📅 工作日行动</h4>
+            <div class="action-buttons" id="weekdayActions">
+                <button onclick="Game.selfTrain()" disabled>🏃 自主训练</button>
+                <button onclick="UI.openPlayerSelectModal()" disabled>💬 个别球员沟通</button>
+                <button onclick="Game.socialMedia()" disabled>发小红书录播客</button>
+                <button onclick="Game.encourageTeam()" disabled>📢 队内公开鼓励</button>
+                <button onclick="Game.handleTeamStuff()" disabled>🧹 处理球队杂事</button>
+                <button onclick="Game.slackOff()" disabled>😴 摸鱼摆烂</button>
+                <div style="display: flex; gap: 8px; width: 100%; margin-top: 8px;">
+                    <button onclick="Game.makeTrainPlan()" disabled>📋 制定周末训练计划</button>
+                    <button onclick="Game.talkToOtherTeam()" disabled>🤝 和其他球队交流</button>
+                    <button onclick="Game.bookFriendlyMatch()" disabled id="bookMatchBtn">📅 约友谊赛</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-section">
+            <h4>🗓️ 周末行动</h4>
+            <div class="action-buttons" id="weekendActions">
+                <button onclick="Game.joinTraining()" disabled>🏋️ 参加周末训练</button>
+                <button onclick="Game.playFriendlyMatch()" disabled>⚡ 打友谊赛</button>
+                <button onclick="Game.skipTraining()" disabled>😤 翘训练摆烂</button>
+            </div>
+        </div>
+
+        <div id="eventChoiceArea"></div>
+        <div id="gameOverArea"></div>
+
+        <div class="log" id="log">💡 请输入名字和球队名，点击「开始游戏」</div>
+    </div>
+
+    <!-- 球员侧边栏 + 比赛记录 -->
+    <div class="players-sidebar">
+        <h2>👥 球队成员</h2>
+        <div id="playersList" class="players-grid">
+            <div style="grid-column: 1 / -1; text-align: center; color: #718096; font-size: 13px;">
+                未开始游戏，暂无球员
+            </div>
+        </div>
+
+        <!-- 关系网络可视化 -->
+        <div style="margin-top:20px;">
+            <h3 style="color:#e24070; font-size:15px; margin:0 0 10px 0; display:flex; align-items:center; gap:4px;">
+                <span>🕸️ 关系网络</span>
+                <span style="font-size:11px; color:#718096; font-weight:normal;">（点击线条查看详情）</span>
+            </h3>
+            <div id="relationshipNetwork"
+                style="background:#f8f9fa; border-radius:12px; padding:10px; min-height:200px; width:100%;">
+            </div>
+
+            <div
+                style="display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; font-size:12px; padding:0 5px; align-items:center;">
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <span style="color:#4299e1; font-size:16px;">━━━</span>
+                    <span>朋友</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <span style="color:#e24070; font-size:16px;">━━━</span>
+                    <span>死党</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <span style="color:#e67e22; font-size:16px;">┅┅┅</span>
+                    <span>竞争</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <span style="color:#ef4444; font-size:16px;">┅┅┅</span>
+                    <span>仇敌</span>
+                </div>
+            </div>
+            <div
+                style="display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; font-size:11px; padding:0 5px; color:#718096;">
+                <span>线条越粗 = 关系越强。无连线说明关系普通。</span>
+                <span>💡 提示：仇敌每天可能冲突，死党一起训练效果更好。</span>
+            </div>
+        </div>
+
+        <!-- 小团体板块 -->
+        <div style="margin-top:20px;">
+            <h3 style="color:#e24070; font-size:15px; margin:0 0 10px 0;">
+                <span>👥 小团体</span>
+            </h3>
+            <div id="factionsList" style="background:#f8f9fa; border-radius:12px; padding:10px; width:100%;">
+                <div style="color:#718096; font-size:12px; text-align:center; padding:5px;">
+                    暂无小团体
+                </div>
+            </div>
+        </div>
+
+        <!-- 历次比赛结果记录 -->
+        <div class="match-history">
+            <h3>📋 历次比赛结果</h3>
+            <div id="matchHistoryList" class="match-history-list">
+                <div style="color: #718096; font-size: 12px; text-align: center;">暂无比赛记录</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗容器 - 独立分开，不再共用 -->
+    <div id="choiceModal" class="event-modal" style="display: none;"></div>
+    <div id="resultModal" class="event-modal" style="display: none;"></div>
+    <div id="infoModal" class="event-modal" style="display: none;"></div>
+    <div id="xiZhaoModal" class="event-modal" style="display: none;"></div>
+    <div id="playerSelectModal" class="event-modal" style="display: none;"></div>
+
+    <!-- 保留原有eventModal作为过渡，后续会逐步移除，暂时保留避免报错 -->
+    <div id="eventModal" class="event-modal" style="display: none;"></div>
+    <!-- 加载 JavaScript 文件 -->
+    <script src="js/game-data.js"></script>
+    <script src="js/game-core.js"></script>
+    <script src="js/game-ui.js"></script>
+    <script>
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            Game.init();
+        });
+    </script>
+
+</body>
+
+</html>
