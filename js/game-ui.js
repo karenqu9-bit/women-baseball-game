@@ -453,6 +453,17 @@ const UI = {
     },
 
     updateButtons: function () {
+        if (!Game || !Game.state) {
+            console.log('updateButtons: Game.state 不存在，跳过');
+            return;
+        }
+        // ===== 修复：用 Game.state 不是 this.state =====
+        if (!Game.state.xiZhaoInProgress) {
+            if (typeof ModalGuard !== 'undefined') {
+                ModalGuard.fixState(Game.state);
+            }
+        }
+        // ===== 结束：状态检查 =====
         const wdBtns = document.querySelectorAll('#weekdayActions button');
         const weBtns = document.querySelectorAll('#weekendActions button');
 
@@ -570,6 +581,11 @@ const UI = {
         document.getElementById('playerSelectModal').style.display = 'none';
         document.getElementById('playerSelectModal').innerHTML = '';
         Game.state.tempSelectedPlayerId = null;
+        // ⭐ 新增
+        if (!Game.state.xiZhaoInProgress) {
+            ModalGuard.fixState(Game.state);
+            Game.updateAll();
+        }
     },
 
     selectPlayerForTalk: function (playerId) {
@@ -841,6 +857,11 @@ const UI = {
         if (!this.modalState.xiZhaoActive && !this.modalState.activeModal) {
             Game.state.isEventActive = false;
         }
+        // ===== 新增：检查状态不一致 =====
+        // 非曦照赛期间才修复
+        if (!Game.state.xiZhaoInProgress) {
+            ModalGuard.fixState(Game.state);
+        }
         // ✅ 招募不推进日期，只刷新UI
         Game.updateAll();
     },
@@ -889,6 +910,10 @@ const UI = {
 
         if (!this.modalState.xiZhaoActive) {
             Game.state.isEventActive = false;
+        }
+        // ⭐ 新增
+        if (!Game.state.xiZhaoInProgress) {
+            ModalGuard.fixState(Game.state);
         }
         // 调用回调函数（如果有）
         if (this._onInfoModalClose) {
@@ -1045,6 +1070,10 @@ const UI = {
             window.pendingFinishAction = false;
             Game.finishAction(); // 这会推进日期
         } else {
+            // ⭐ 新增
+            if (!Game.state.xiZhaoInProgress) {
+                ModalGuard.fixState(Game.state);
+            }
             Game.updateAll();
         }
     },
@@ -1131,6 +1160,11 @@ const UI = {
             window.pendingFinishAction = false;
             Game.finishAction();
         } else {
+            // ===== 新增 =====
+            if (!Game.state.xiZhaoInProgress) {
+                ModalGuard.fixState(Game.state);
+            }
+            // ===== 结束 =====
             Game.updateAll();
         }
     },

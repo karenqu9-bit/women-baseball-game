@@ -1,3 +1,40 @@
+// ====================== 弹窗守护器 ======================
+const ModalGuard = {
+    // 检查当前是否有弹窗显示
+    isAnyModalVisible: function () {
+        return ['choiceModal', 'resultModal', 'infoModal', 'xiZhaoModal', 'playerSelectModal', 'eventModal'].some(
+            (id) => {
+                const modal = document.getElementById(id);
+                return modal && modal.style.display === 'flex' && modal.innerHTML !== '';
+            }
+        );
+    },
+
+    // 修复状态不一致
+    fixState: function (gameState) {
+        const hasModal = this.isAnyModalVisible();
+        // ===== 新增：安全判断 =====
+        if (!gameState) {
+            console.log('ModalGuard: gameState 不存在，跳过');
+            return false;
+        }
+        // ===== 结束 =====
+        if (!hasModal && gameState.isEventActive) {
+            console.log('🔧 修复：无弹窗但已锁定 → 解锁');
+            gameState.isEventActive = false;
+            return true;
+        }
+
+        if (hasModal && !gameState.isEventActive) {
+            console.log('🔧 修复：有弹窗但未锁定 → 锁定');
+            gameState.isEventActive = true;
+            return true;
+        }
+
+        return false;
+    },
+};
+
 // ====================== 游戏核心对象 ======================
 const Game = {
     // ====================== 游戏状态 ======================
@@ -4168,8 +4205,10 @@ const Game = {
         );
     },
     // ====================== 初始化函数 ======================
+    // ====================== 初始化函数 ======================
     init: function () {
         console.log('Game.init 被调用');
+
         // 设置默认值
         let playerNameInput = document.getElementById('playerName');
         let teamNameInput = document.getElementById('teamName');
@@ -4180,6 +4219,24 @@ const Game = {
         if (teamNameInput) {
             teamNameInput.value = '巫师';
         }
+
+        // ===== 新增：守护定时器 =====
+        setInterval(() => {
+            // 游戏未开始时不检查
+            if (!this.state.gameStarted) return;
+
+            // ⭐ 曦照赛进行中，不干预！（保护曦照赛逻辑）
+            if (this.state.xiZhaoInProgress) {
+                return;
+            }
+
+            // 检查并修复状态不一致
+            if (ModalGuard.fixState(this.state)) {
+                // 如果修复了状态，更新按钮
+                UI.updateButtons();
+            }
+        }, 500); // 每500ms检查一次
+        // ===== 结束：守护定时器 =====
     },
 };
 // ====================== 导出全局访问 ======================
