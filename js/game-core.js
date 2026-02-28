@@ -128,6 +128,24 @@ const Game = {
         xiZhaoMatches: [],
         xiZhaoOpponents: ['永远少女队', '同济女垒队', '橘子队'],
 
+        // 全国大赛状态
+        national: {
+            canJoin: false, // 是否有资格参加（曦照赛前三名）
+            inProgress: false, // 是否进行中
+            day: 0, // 当前比赛日 (1-5)
+            matches: [], // 比赛记录
+            opponents: [
+                { name: '上海正大凤队', color: '#E83F6F' },
+                { name: '厦门海妖队', color: '#2C9A9E' },
+                { name: '福州女侠队', color: '#F4A261' },
+                { name: '深圳红袜队', color: '#E76F51' },
+                { name: '长沙旺囡队', color: '#9C89B8' },
+            ],
+            rewards: {
+                spirit: 0,
+                relation: 0,
+            },
+        },
         // 球员列表
         playerList: [],
         recruitedNames: new Set(),
@@ -407,7 +425,7 @@ const Game = {
     calculateWinRate: function () {
         // 气氛占30%，球队实力占70%（球队实力已包含创始人）
         let baseRate = (this.state.mood * 0.3 + this.state.teamLevel * 0.7) / 100;
-        return Math.min(0.6, baseRate);
+        return Math.min(0.7, baseRate);
     },
 
     // ====================== 关系系统 ======================
@@ -1932,14 +1950,35 @@ const Game = {
     },
 
     // ====================== 比赛历史 ======================
-    addMatchRecord: function (date, opponent, scoreTeam, scoreOpponent, win, isXiZhao = false) {
+    addMatchRecord: function (
+        date,
+        opponent,
+        scoreTeam,
+        scoreOpponent,
+        win,
+        isTournament = false,
+        tournamentType = ''
+    ) {
+        let title = '';
+        if (tournamentType === 'xizhao') {
+            title = '🏆 曦照赛';
+        } else if (tournamentType === 'national') {
+            title = '🏆 全国大赛';
+        } else if (isTournament) {
+            title = '🏆 锦标赛';
+        } else {
+            title = '⚾ 友谊赛';
+        }
+
         this.state.matchHistory.unshift({
             date: this.formatDate(date),
             opponent: opponent,
             score: `${scoreTeam} : ${scoreOpponent}`,
             win: win,
-            isXiZhao: isXiZhao,
+            title: title, // 新增：直接存储标题
+            type: tournamentType || (isTournament ? 'tournament' : 'friendly'),
         });
+
         if (this.state.matchHistory.length > 30) this.state.matchHistory.pop();
         UI.updateMatchHistory();
     },
@@ -2378,6 +2417,14 @@ const Game = {
             this.triggerXiZhaoChoose();
             return; // 触发后直接返回，不再继续检查其他事件
         }
+        // ===== 新增：全国大赛触发检查 =====
+        // 7月1日：开始全国大赛（如果有资格）
+        if (month === 7 && day === 1 && this.state.national.canJoin && !this.state.national.inProgress) {
+            console.log('🏆 全国大赛开始！');
+            this.startNationalTournament();
+            return;
+        }
+
         // ✨ 在这里添加！重新计算球队实力和气氛
         this.updateTeamLevel();
         this.updateMoodFromRelationships();
@@ -2536,7 +2583,8 @@ const Game = {
             teamScore,
             oppScore,
             win,
-            true
+            true,
+            'xizhao'
         );
         this.state.seasonMatchCount++;
         if (win) this.state.seasonWinCount++;
@@ -2576,6 +2624,12 @@ const Game = {
         let oldSpirit = this.state.spirit;
 
         let wins = this.state.xiZhaoMatches.filter((m) => m.win).length;
+        // ===== 新增：检查是否获得全国赛资格 =====
+        if (wins >= 1) {
+            // 前三名（1-3胜）
+            this.state.national.canJoin = true;
+            console.log('🎉 获得全国大赛参赛资格！');
+        }
         let rewards =
             wins === 3
                 ? { mood: 40, teamLevel: 30, spirit: 25, relation: 30 }
@@ -2636,6 +2690,252 @@ const Game = {
                 relation: relationDelta,
             }
         );
+    },
+
+    // ====================== 全国大赛 ======================
+    startNationalTournament: function () {
+        this.state.national.inProgress = true;
+        this.state.national.day = 1;
+        this.state.national.matches = [];
+        this.state.national.rewards.spirit = 0;
+        this.state.national.rewards.relation = 0;
+        this.state.isEventActive = true;
+
+        // 延迟一点开始第一场比赛
+        setTimeout(() => {
+            this.playNationalMatch(1);
+        }, 100);
+    },
+
+    playNationalMatch: function (day) {
+        // 保存赛前状态
+        let oldMood = this.state.mood;
+        let oldTeamLevel = this.state.teamLevel;
+        let oldRelation = this.state.relation;
+        let oldSpirit = this.state.spirit;
+        let oldSkill = this.state.skill;
+
+        let opponent = this.state.national.opponents[day - 1];
+        let winRate = this.calculateWinRate() + 0.1; // 全国大赛胜率加成
+        let win = Math.random() < winRate;
+
+        // 生成比分
+        let teamScore = win ? this.randomDelta(4, 10) : this.randomDelta(0, 4);
+        let oppScore = win ? this.randomDelta(0, 3) : this.randomDelta(5, 12);
+
+        // 根据胜负产生不同影响
+        if (win) {
+            this.nationalVictory(day, opponent);
+        } else {
+            this.nationalLoss(day, opponent);
+        }
+
+        // 记录比赛
+        this.state.national.matches.push({
+            day: day,
+            opponent: opponent.name,
+            win: win,
+            teamScore: teamScore,
+            oppScore: oppScore,
+        });
+
+        // ===== 修改：使用正确的日期 =====
+        // 全国赛从7月1日开始，第day天就是 7月1日 + (day-1)天
+        let matchDate = new Date(2024, 6, 1); // 7月1日
+        matchDate.setDate(matchDate.getDate() + (day - 1)); // 加上天数偏移
+        // ===== 新增：添加到比赛历史 =====
+        this.addMatchRecord(
+            matchDate, // 当前日期
+            opponent.name, // 对手
+            teamScore, // 我方得分
+            oppScore, // 对方得分
+            win, // 是否胜利
+            true, // 是大赛（用true标记，或者新增一个类型）
+            'national' // 新增参数：比赛类型
+        );
+
+        // 重新计算球队实力和气氛
+        this.updateTeamLevel();
+        this.updateMoodFromRelationships();
+
+        // 计算变化
+        let changes = {
+            mood: this.state.mood - oldMood,
+            teamLevel: this.state.teamLevel - oldTeamLevel,
+            relation: this.state.relation - oldRelation,
+            spirit: this.state.spirit - oldSpirit,
+            skill: this.state.skill - oldSkill,
+        };
+
+        // 累计奖励（用于总结）
+        this.state.national.rewards.spirit += changes.spirit;
+        this.state.national.rewards.relation += changes.relation;
+
+        // 记录到赛季统计
+        this.state.seasonMatchCount++;
+        if (win) this.state.seasonWinCount++;
+
+        // 显示比赛结果
+        if (day < 5) {
+            UI.showNationalMatchModal({
+                day: day,
+                opponent: opponent,
+                win: win,
+                teamScore: teamScore,
+                oppScore: oppScore,
+                changes: changes,
+                nextOpponent: this.state.national.opponents[day],
+            });
+        } else {
+            // 最后一天，直接进入总结
+            this.finishNationalTournament();
+        }
+    },
+
+    nationalVictory: function (day, opponent) {
+        // 1. 所有球员球技提升
+        this.state.playerList.forEach((player) => {
+            let skillUp = this.randomDelta(3, 6);
+            player.skill = Math.min(100, player.skill + skillUp);
+            setTimeout(() => UI.showPlayerFloat(player.id, 'skill', skillUp), 10);
+
+            // 忠诚度提升
+            let loyaltyUp = this.randomDelta(2, 5);
+            player.loyalty = Math.min(100, player.loyalty + loyaltyUp);
+            setTimeout(() => UI.showPlayerFloat(player.id, 'loyalty', loyaltyUp), 10);
+        });
+
+        // 2. 创始人成长
+        let founderSkillUp = this.randomDelta(4, 8);
+        let founderSpiritUp = this.randomDelta(5, 10);
+        this.state.skill += founderSkillUp;
+        this.state.spirit += founderSpiritUp;
+
+        // 3. 关系提升
+        for (let i = 0; i < this.state.playerList.length; i++) {
+            for (let j = i + 1; j < this.state.playerList.length; j++) {
+                if (Math.random() < 0.3) {
+                    let relUp = this.randomDelta(3, 6);
+                    this.modifyRelationship(this.state.playerList[i], this.state.playerList[j], relUp);
+                }
+            }
+        }
+
+        UI.addLog(`🏆 全国大赛第${day}日战胜${opponent.name}`, {
+            skill: founderSkillUp,
+            spirit: founderSpiritUp,
+        });
+    },
+
+    nationalLoss: function (day, opponent) {
+        // 1. 部分球员有少量成长
+        this.state.playerList.forEach((player) => {
+            if (Math.random() < 0.6) {
+                let skillUp = this.randomDelta(1, 3);
+                player.skill = Math.min(100, player.skill + skillUp);
+                setTimeout(() => UI.showPlayerFloat(player.id, 'skill', skillUp), 10);
+            }
+
+            // 可能忠诚度下降
+            if (Math.random() < 0.3) {
+                let loyaltyDown = -this.randomDelta(2, 4);
+                player.loyalty = Math.max(0, player.loyalty + loyaltyDown);
+                setTimeout(() => UI.showPlayerFloat(player.id, 'loyalty', loyaltyDown), 10);
+            }
+        });
+
+        // 2. 创始人少量成长，但精力下降
+        let founderSkillUp = this.randomDelta(1, 3);
+        let founderSpiritDown = -this.randomDelta(3, 8);
+        this.state.skill += founderSkillUp;
+        this.state.spirit += founderSpiritDown;
+
+        // 3. 关系可能变差
+        for (let i = 0; i < this.state.playerList.length; i++) {
+            for (let j = i + 1; j < this.state.playerList.length; j++) {
+                if (Math.random() < 0.1) {
+                    let relDown = -this.randomDelta(2, 4);
+                    this.modifyRelationship(this.state.playerList[i], this.state.playerList[j], relDown);
+                }
+            }
+        }
+
+        UI.addLog(`🌧️ 全国大赛第${day}日惜败${opponent.name}`, {
+            spirit: founderSpiritDown,
+            skill: founderSkillUp,
+        });
+    },
+
+    finishNationalTournament: function () {
+        let wins = this.state.national.matches.filter((m) => m.win).length;
+
+        // 计算最终排名
+        let rank = '';
+        let rankColor = '';
+        if (wins === 5) {
+            rank = '🏆 全国冠军';
+            rankColor = '#FFD700';
+        } else if (wins === 4) {
+            rank = '🥈 全国亚军';
+            rankColor = '#C0C0C0';
+        } else if (wins === 3) {
+            rank = '🥉 全国季军';
+            rankColor = '#CD7F32';
+        } else if (wins === 2) {
+            rank = '全国第四';
+            rankColor = '#4A90E2';
+        } else if (wins === 1) {
+            rank = '全国第五';
+            rankColor = '#50C878';
+        } else {
+            rank = '全国第六';
+            rankColor = '#9CA3AF';
+        }
+
+        // 显示总结弹窗
+        UI.showNationalSummaryModal({
+            rank: rank,
+            rankColor: rankColor,
+            wins: wins,
+            matches: this.state.national.matches,
+            spiritReward: this.state.national.rewards.spirit,
+            relationReward: this.state.national.rewards.relation,
+        });
+    },
+
+    handleNationalNextDay: function () {
+        // 关闭当前弹窗
+        document.getElementById('nationalModal').style.display = 'none';
+        document.getElementById('nationalModal').innerHTML = '';
+
+        // 进入下一天
+        this.state.national.day++;
+
+        // 进行下一场比赛
+        setTimeout(() => {
+            Game.playNationalMatch(Game.state.national.day);
+        }, 100);
+    },
+
+    handleNationalFinish: function () {
+        // 关闭总结弹窗
+        document.getElementById('nationalModal').style.display = 'none';
+        document.getElementById('nationalModal').innerHTML = '';
+
+        // 设置日期到7月6日
+        this.state.currentDate = new Date(2024, 6, 6); // 月份从0开始，6=7月
+        this.state.isWeekend = this.checkIfWeekend();
+        this.state.weekdayActionsLeft = 5;
+        this.state.hasBookedFriendlyMatch = false;
+        this.state.bookedThisWeek = false;
+
+        // 结束全国大赛状态
+        this.state.national.inProgress = false;
+        this.state.isEventActive = false;
+
+        // 刷新游戏
+        this.updateAll();
+        UI.updateButtons();
     },
     // ====================== 随机事件检查 ======================
     checkRandomEvent: function () {
@@ -4204,7 +4504,6 @@ const Game = {
             }
         );
     },
-    // ====================== 初始化函数 ======================
     // ====================== 初始化函数 ======================
     init: function () {
         console.log('Game.init 被调用');

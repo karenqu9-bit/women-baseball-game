@@ -406,9 +406,24 @@ const UI = {
 
         let html = '';
         Game.state.matchHistory.slice(0, 5).forEach((match) => {
-            let title = match.isXiZhao ? '🏆 曦照赛' : '⚾ 友谊赛';
+            // 使用存储的标题，如果没有则根据类型判断
+            let title =
+                match.title ||
+                (match.type === 'xizhao'
+                    ? '🏆 曦照赛'
+                    : match.type === 'national'
+                    ? '🏆 全国大赛'
+                    : match.type === 'tournament'
+                    ? '🏆 锦标赛'
+                    : '⚾ 友谊赛');
+
+            // 根据比赛类型设置不同颜色
+            let titleColor = match.type === 'national' ? '#FFD700' : match.type === 'xizhao' ? '#e24070' : '#718096';
+
             html += `
-                <div class="match-record ${match.win ? 'win' : 'loss'}">
+                <div class="match-record ${match.win ? 'win' : 'loss'}" style="border-left-color: ${
+                match.win ? '#22c55e' : '#ef4444'
+            };">
                     <div style="display:flex; justify-content:space-between;">
                         <span>${match.date}</span>
                         <span style="font-weight:bold;">${match.win ? '🏆 胜' : '🌧️ 负'}</span>
@@ -419,7 +434,7 @@ const UI = {
                 match.score
             }</span>
                     </div>
-                    <div style="font-size:11px; color:#718096; margin-top:2px;">${title}</div>
+                    <div style="font-size:11px; color: ${titleColor}; margin-top:2px; font-weight: bold;">${title}</div>
                 </div>
             `;
         });
@@ -1170,6 +1185,7 @@ const UI = {
     },
 
     // ====================== 曦照赛专用弹窗系统 ======================
+    // ====================== 曦照赛单场比赛弹窗 ======================
     showXiZhaoMatchModal: function (
         day,
         opponent,
@@ -1196,61 +1212,59 @@ const UI = {
         let nextMatchHtml = '';
         if (day < 3) {
             nextMatchHtml = `
-            <div style="background:#f8f9fa; padding:8px; border-radius:6px; margin:10px 0;">
-                <div style="font-size:12px; color:#2d3748; margin-bottom:3px;">📅 明日赛程</div>
-                <div style="font-size:14px; font-weight:bold; color:#e24070;">vs ${nextOpponent}</div>
-            </div>
-        `;
+        <div style="background:#f8f9fa; padding:8px; border-radius:6px; margin:10px 0;">
+            <div style="font-size:12px; color:#2d3748; margin-bottom:3px;">📅 明日赛程</div>
+            <div style="font-size:14px; font-weight:bold; color:#e24070;">vs ${nextOpponent}</div>
+        </div>
+    `;
         }
 
         let desc = `
-        <div style="text-align:center; font-size:13px;">
-            <div style="font-size:18px; font-weight:bold; color:#e24070; margin-bottom:10px;">
-                🏆 曦照赛 第${day}天
-            </div>
-            
-            <div style="background:${
-                win ? '#f0fdf4' : '#fff5f5'
-            }; padding:12px; border-radius:8px; margin-bottom:10px;">
-                <div style="font-size:14px; font-weight:bold; margin-bottom:5px; color:#2d3748;">
-                    对阵 ${opponent}
-                </div>
-                <div style="font-size:32px; font-weight:bold; color:${resultColor}; margin:5px 0;">
-                    ${teamScore} : ${oppScore}
-                </div>
-                <div style="font-size:16px; font-weight:bold; color:${resultColor}; margin:5px 0;">
-                    ${resultText}
-                </div>
-                <div style="margin-top:8px; color:#666; font-size:12px; line-height:1.4;">
-                    ${matchDesc}
-                </div>
-                <div style="margin-top:8px; padding-top:8px; border-top:1px dashed ${resultColor};">
-                    <div style="font-size:11px; color:#718096; margin-bottom:2px;">📊 队内气氛变化</div>
-                    <div style="font-size:16px; font-weight:bold; color:${moodDelta >= 0 ? '#22c55e' : '#ef4444'};">
-                        ${moodDelta > 0 ? '+' : ''}${moodDelta}
-                    </div>
-                </div>
-            </div>
-            
-            <div style="background:linear-gradient(135deg, #fef2f4 0%, #ffe0e5 100%); padding:10px; border-radius:8px; margin:10px 0;">
-                <div style="font-weight:bold; font-size:14px; color:#e24070; margin-bottom:5px;">
-                    当前战绩
-                </div>
-                <div style="display:flex; justify-content:center; gap:30px;">
-                    <div>
-                        <div style="font-size:11px; color:#718096;">胜场</div>
-                        <div style="font-size:24px; font-weight:bold; color:#22c55e;">${currentWins}</div>
-                    </div>
-                    <div>
-                        <div style="font-size:11px; color:#718096;">负场</div>
-                        <div style="font-size:24px; font-weight:bold; color:#ef4444;">${currentLosses}</div>
-                    </div>
-                </div>
-            </div>
-            
-            ${nextMatchHtml}
+    <div style="text-align:center; font-size:13px;">
+        <div style="font-size:18px; font-weight:bold; color:#e24070; margin-bottom:10px;">
+            🏆 曦照赛 第${day}天
         </div>
-    `;
+        
+        <div style="background:${win ? '#f0fdf4' : '#fff5f5'}; padding:12px; border-radius:8px; margin-bottom:10px;">
+            <div style="font-size:14px; font-weight:bold; margin-bottom:5px; color:#2d3748;">
+                对阵 ${opponent}
+            </div>
+            <div style="font-size:32px; font-weight:bold; color:${resultColor}; margin:5px 0;">
+                ${teamScore} : ${oppScore}
+            </div>
+            <div style="font-size:16px; font-weight:bold; color:${resultColor}; margin:5px 0;">
+                ${resultText}
+            </div>
+            <div style="margin-top:8px; color:#666; font-size:12px; line-height:1.4;">
+                ${matchDesc}
+            </div>
+            <div style="margin-top:8px; padding-top:8px; border-top:1px dashed ${resultColor};">
+                <div style="font-size:11px; color:#718096; margin-bottom:2px;">📊 队内气氛变化</div>
+                <div style="font-size:16px; font-weight:bold; color:${moodDelta >= 0 ? '#22c55e' : '#ef4444'};">
+                    ${moodDelta > 0 ? '+' : ''}${moodDelta}
+                </div>
+            </div>
+        </div>
+        
+        <div style="background:linear-gradient(135deg, #fef2f4 0%, #ffe0e5 100%); padding:10px; border-radius:8px; margin:10px 0;">
+            <div style="font-weight:bold; font-size:14px; color:#e24070; margin-bottom:5px;">
+                当前战绩
+            </div>
+            <div style="display:flex; justify-content:center; gap:30px;">
+                <div>
+                    <div style="font-size:11px; color:#718096;">胜场</div>
+                    <div style="font-size:24px; font-weight:bold; color:#22c55e;">${currentWins}</div>
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#718096;">负场</div>
+                    <div style="font-size:24px; font-weight:bold; color:#ef4444;">${currentLosses}</div>
+                </div>
+            </div>
+        </div>
+        
+        ${nextMatchHtml}
+    </div>
+`;
 
         // 使用专门的曦照赛弹窗容器
         const modal = document.getElementById('xiZhaoModal');
@@ -1258,21 +1272,58 @@ const UI = {
         if (day < 3) {
             // 第1、2天显示"明日再战"
             modal.innerHTML = `
-            <div class="event-modal-content" style="max-width:380px; background:white; border-radius:15px;">
-                <div style="background:#e24070; color:white; padding:10px; border-radius:15px 15px 0 0; text-align:center;">
-                    <span style="font-size:16px; font-weight:bold;">⚾ 曦照女子棒球赛 ⚾</span>
-                </div>
-                <div style="padding:15px;">
-                    ${desc}
-                    <div style="display:flex; gap:10px; margin-top:15px;">
-                        <button onclick="UI.handleXiZhaoNextDay()" 
-                                style="flex:1; background:#22c55e; color:white; border:none; padding:8px; border-radius:6px; font-size:14px; font-weight:bold; cursor:pointer;">
-                            明日再战 →
-                        </button>
-                    </div>
-                </div>
+        <div style="
+            width: 450px;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        ">
+            <!-- 头部 - 固定 -->
+            <div style="
+                background: #e24070;
+                color: white;
+                padding: 12px 15px;
+                text-align: center;
+                flex-shrink: 0;
+            ">
+                <span style="font-size: 18px; font-weight: bold;">⚾ 曦照女子棒球赛 ⚾</span>
             </div>
-        `;
+            
+            <!-- 内容 - 滚动区域 -->
+            <div style="
+                padding: 15px;
+                overflow-y: auto;
+                flex: 1;
+            ">
+                ${desc}
+            </div>
+            
+            <!-- 按钮 - 固定 -->
+            <div style="
+                padding: 0 15px 15px 15px;
+                flex-shrink: 0;
+            ">
+                <button onclick="UI.handleXiZhaoNextDay()" 
+                        style="
+                            width: 100%;
+                            background: #22c55e;
+                            color: white;
+                            border: none;
+                            padding: 12px;
+                            border-radius: 8px;
+                            font-size: 16px;
+                            font-weight: bold;
+                            cursor: pointer;
+                        ">
+                    明日再战 →
+                </button>
+            </div>
+        </div>
+    `;
         } else {
             // 第3天显示"查看总成绩"，将在 finishXiZhaoTournament 中处理
             modal.innerHTML = '';
@@ -1303,6 +1354,7 @@ const UI = {
     },
 
     // ====================== 曦照赛总结弹窗 ======================
+    // ====================== 曦照赛总结弹窗 ======================
     showXiZhaoSummaryModal: function (wins, matches, rewards, moodDelta, teamDelta, spiritDelta, relationDelta) {
         // 关闭所有弹窗
         this.closeAllModals();
@@ -1327,63 +1379,63 @@ const UI = {
             titleColor = '#718096';
         }
 
-        // 计算弹窗总高度，确保内容刚好 fit 不需要滚动
+        // 比赛详情
         let matchesHtml = matches
             .map((m, idx) => {
                 let bgColor = m.win ? '#f0fdf4' : '#fff5f5';
                 let borderColor = m.win ? '#22c55e' : '#ef4444';
                 return `
-            <div style="background:${bgColor}; padding:6px 8px; margin-bottom:4px; border-radius:4px; border-left:3px solid ${borderColor}; display:flex; justify-content:space-between; align-items:center; font-size:11px;">
-                <div style="font-weight:500; color:#2d3748;">第${idx + 1}天 vs ${m.opponent}</div>
-                <div style="font-size:13px; font-weight:bold; color:${m.win ? '#22c55e' : '#ef4444'};">${m.teamScore}:${
+        <div style="background:${bgColor}; padding:8px 10px; margin-bottom:4px; border-radius:4px; border-left:3px solid ${borderColor}; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+            <div style="font-weight:500; color:#2d3748;">第${idx + 1}天 vs ${m.opponent}</div>
+            <div style="font-size:14px; font-weight:bold; color:${m.win ? '#22c55e' : '#ef4444'};">${m.teamScore}:${
                     m.oppScore
                 }</div>
-            </div>
-        `;
+        </div>
+    `;
             })
             .join('');
 
-        // 生成奖励格子，有变化的才显示
+        // 奖励格子
         let rewardItems = [];
         if (moodDelta !== 0) {
             rewardItems.push(`
-            <div style="background:#f8f9fa; padding:5px; border-radius:4px; text-align:center;">
-                <div style="font-size:9px; color:#718096; margin-bottom:2px;">队内气氛</div>
-                <div style="font-size:13px; font-weight:bold; color:${moodDelta >= 0 ? '#22c55e' : '#ef4444'};">${
+        <div style="background:#f8f9fa; padding:5px; border-radius:4px; text-align:center;">
+            <div style="font-size:10px; color:#718096; margin-bottom:2px;">队内气氛</div>
+            <div style="font-size:14px; font-weight:bold; color:${moodDelta >= 0 ? '#22c55e' : '#ef4444'};">${
                 moodDelta > 0 ? '+' : ''
             }${moodDelta}</div>
-            </div>
-        `);
+        </div>
+    `);
         }
         if (teamDelta !== 0) {
             rewardItems.push(`
-            <div style="background:#f8f9fa; padding:5px; border-radius:4px; text-align:center;">
-                <div style="font-size:9px; color:#718096; margin-bottom:2px;">球队实力</div>
-                <div style="font-size:13px; font-weight:bold; color:${teamDelta >= 0 ? '#22c55e' : '#ef4444'};">${
+        <div style="background:#f8f9fa; padding:5px; border-radius:4px; text-align:center;">
+            <div style="font-size:10px; color:#718096; margin-bottom:2px;">球队实力</div>
+            <div style="font-size:14px; font-weight:bold; color:${teamDelta >= 0 ? '#22c55e' : '#ef4444'};">${
                 teamDelta > 0 ? '+' : ''
             }${teamDelta}</div>
-            </div>
-        `);
+        </div>
+    `);
         }
         if (spiritDelta !== 0) {
             rewardItems.push(`
-            <div style="background:#f8f9fa; padding:5px; border-radius:4px; text-align:center;">
-                <div style="font-size:9px; color:#718096; margin-bottom:2px;">精神力</div>
-                <div style="font-size:13px; font-weight:bold; color:${spiritDelta >= 0 ? '#22c55e' : '#ef4444'};">${
+        <div style="background:#f8f9fa; padding:5px; border-radius:4px; text-align:center;">
+            <div style="font-size:10px; color:#718096; margin-bottom:2px;">精神力</div>
+            <div style="font-size:14px; font-weight:bold; color:${spiritDelta >= 0 ? '#22c55e' : '#ef4444'};">${
                 spiritDelta > 0 ? '+' : ''
             }${spiritDelta}</div>
-            </div>
-        `);
+        </div>
+    `);
         }
         if (relationDelta !== 0) {
             rewardItems.push(`
-            <div style="background:#f8f9fa; padding:5px; border-radius:4px; text-align:center;">
-                <div style="font-size:9px; color:#718096; margin-bottom:2px;">人际关系</div>
-                <div style="font-size:13px; font-weight:bold; color:${relationDelta >= 0 ? '#22c55e' : '#ef4444'};">${
+        <div style="background:#f8f9fa; padding:5px; border-radius:4px; text-align:center;">
+            <div style="font-size:10px; color:#718096; margin-bottom:2px;">人际关系</div>
+            <div style="font-size:14px; font-weight:bold; color:${relationDelta >= 0 ? '#22c55e' : '#ef4444'};">${
                 relationDelta > 0 ? '+' : ''
             }${relationDelta}</div>
-            </div>
-        `);
+        </div>
+    `);
         }
 
         let rewardsHtml =
@@ -1391,10 +1443,10 @@ const UI = {
                 ? `<div style="display:grid; grid-template-columns:repeat(${Math.min(
                       2,
                       rewardItems.length
-                  )}, 1fr); gap:4px; margin-top:6px;">${rewardItems.join('')}</div>`
+                  )}, 1fr); gap:5px; margin-top:8px;">${rewardItems.join('')}</div>`
                 : '';
 
-        // 根据胜场数确定评语
+        // 评语
         let comment = '';
         if (wins === 3) comment = '🎉 恭喜夺冠！球队士气大振！';
         else if (wins === 2) comment = '✨ 表现不错，明年再战！';
@@ -1402,74 +1454,122 @@ const UI = {
         else comment = '😢 好好总结，来年再战！';
 
         let desc = `
-        <div style="font-size:12px; line-height:1.4;">
-            <!-- 标题 -->
-            <div style="text-align:center; margin-bottom:10px;">
-                <span style="font-size:20px; font-weight:bold; color:${titleColor};">${titleText}</span>
-            </div>
-            
-            <!-- 战绩卡片 -->
-            <div style="background:linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding:12px; border-radius:8px; margin-bottom:10px;">
-                <div style="display:flex; justify-content:space-around; align-items:center;">
-                    <div style="text-align:center;">
-                        <div style="font-size:10px; color:#718096; margin-bottom:2px;">胜场</div>
-                        <div style="font-size:28px; font-weight:bold; color:#22c55e; line-height:1;">${wins}</div>
-                    </div>
-                    <div style="width:1px; height:30px; background:#ddd;"></div>
-                    <div style="text-align:center;">
-                        <div style="font-size:10px; color:#718096; margin-bottom:2px;">负场</div>
-                        <div style="font-size:28px; font-weight:bold; color:#ef4444; line-height:1;">${3 - wins}</div>
-                    </div>
+    <div style="font-size:12px; line-height:1.4;">
+        <!-- 标题 -->
+        <div style="text-align:center; margin-bottom:8px;">
+            <span style="font-size:20px; font-weight:bold; color:${titleColor};">${titleText}</span>
+        </div>
+        
+        <!-- 战绩卡片 -->
+        <div style="background:linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding:10px; border-radius:8px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-around; align-items:center;">
+                <div style="text-align:center;">
+                    <div style="font-size:10px; color:#718096; margin-bottom:2px;">胜场</div>
+                    <div style="font-size:24px; font-weight:bold; color:#22c55e; line-height:1;">${wins}</div>
+                </div>
+                <div style="width:1px; height:24px; background:#ddd;"></div>
+                <div style="text-align:center;">
+                    <div style="font-size:10px; color:#718096; margin-bottom:2px;">负场</div>
+                    <div style="font-size:24px; font-weight:bold; color:#ef4444; line-height:1;">${3 - wins}</div>
                 </div>
             </div>
-            
-            <!-- 比赛详情 -->
-            <div style="margin-bottom:8px;">
-                <div style="font-size:11px; font-weight:600; color:#2d3748; margin-bottom:4px;">📋 比赛详情</div>
-                ${matchesHtml}
-            </div>
-            
-            <!-- 赛事奖励 -->
-            ${
-                rewardItems.length > 0
-                    ? `
-            <div style="margin-bottom:8px;">
-                <div style="font-size:11px; font-weight:600; color:#2d3748; margin-bottom:4px;">🎁 赛事奖励</div>
-                ${rewardsHtml}
-            </div>
-            `
-                    : ''
-            }
-            
-            <!-- 评语 -->
-            <div style="background:#f8f9fa; padding:6px 8px; border-radius:4px; font-size:11px; color:#2d3748; text-align:center; border-left:3px solid #e24070;">
-                ${comment}
-            </div>
         </div>
-    `;
+        
+        <!-- 比赛详情 -->
+        <div style="margin-bottom:8px;">
+            <div style="font-size:11px; font-weight:600; color:#2d3748; margin-bottom:4px;">📋 比赛详情</div>
+            ${matchesHtml}
+        </div>
+        
+        <!-- 赛事奖励 -->
+        ${
+            rewardsHtml
+                ? `
+        <div style="margin-bottom:8px;">
+            <div style="font-size:11px; font-weight:600; color:#2d3748; margin-bottom:4px;">🎁 赛事奖励</div>
+            ${rewardsHtml}
+        </div>
+        `
+                : ''
+        }
+        
+        <!-- 评语 -->
+        <div style="background:#f8f9fa; padding:5px 8px; border-radius:4px; font-size:11px; color:#2d3748; text-align:center; border-left:3px solid #e24070;">
+            ${comment}
+        </div>
+
+        <!-- 晋级全国大赛通知 -->
+        ${
+            wins >= 1
+                ? `
+        <div style="background: linear-gradient(90deg, #FFD70020, #FFA50020); border: 2px solid #FFD700; border-radius: 10px; padding: 12px; margin: 12px 0; text-align: center;">
+            <div style="font-size: 22px; margin-bottom: 5px;">🎉</div>
+            <div style="color: #FFD700; font-weight: bold; font-size: 16px;">恭喜获得曦照赛${
+                wins === 3 ? '冠军' : wins === 2 ? '亚军' : '季军'
+            }！</div>
+            <div style="color: #e24070; font-size: 14px; font-weight: bold; margin-top: 5px;">✨ 成功进军全国大赛！ ✨</div>
+            <div style="color: #666; font-size: 12px; margin-top: 8px;">7月1日，全国女子棒球城市联赛见！</div>
+        </div>
+        `
+                : ''
+        }
+    </div>
+`;
 
         const modal = document.getElementById('xiZhaoModal');
         modal.innerHTML = `
-        <div class="event-modal-content" style="width:340px; background:white; border-radius:12px; overflow:hidden;">
-            <!-- 头部 - 固定 -->
-            <div style="background:#e24070; color:white; padding:8px 12px; text-align:center;">
-                <span style="font-size:14px; font-weight:bold;">🏆 曦照赛 圆满落幕</span>
-            </div>
-            
-            <!-- 内容 - 固定高度，不滚动 -->
-            <div style="padding:12px;">
-                ${desc}
-            </div>
-            
-            <!-- 按钮 - 固定 -->
-            <div style="padding:0 12px 12px 12px;">
-                <button onclick="UI.handleXiZhaoFinish()" 
-                        style="width:100%; background:#e24070; color:white; border:none; padding:8px; border-radius:6px; font-size:13px; font-weight:bold; cursor:pointer;">
-                    继续征程 →
-                </button>
-            </div>
+    <div style="
+        width: 500px;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        max-height: 85vh;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    ">
+        <!-- 头部 - 固定 -->
+        <div style="
+            background: #e24070;
+            color: white;
+            padding: 12px 15px;
+            text-align: center;
+            flex-shrink: 0;
+        ">
+            <span style="font-size: 16px; font-weight: bold;">🏆 曦照赛 圆满落幕</span>
         </div>
-    `;
+        
+        <!-- 内容 - 滚动区域 -->
+        <div style="
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
+        ">
+            ${desc}
+        </div>
+        
+        <!-- 按钮 - 固定 -->
+        <div style="
+            padding: 0 15px 15px 15px;
+            flex-shrink: 0;
+        ">
+            <button onclick="UI.handleXiZhaoFinish()" 
+                    style="
+                        width: 100%;
+                        background: #e24070;
+                        color: white;
+                        border: none;
+                        padding: 12px;
+                        border-radius: 6px;
+                        font-size: 14px;
+                        font-weight: bold;
+                        cursor: pointer;
+                    ">
+                继续征程 →
+            </button>
+        </div>
+    </div>
+`;
 
         modal.style.display = 'flex';
     },
@@ -1490,7 +1590,6 @@ const UI = {
         // 结束曦照赛状态
         Game.state.xiZhaoInProgress = false;
         Game.state.xiZhaoStatus = Game.state.XIZHAO_STATUS.FINISHED;
-        Game.state.xiZhaoMatches = [];
         // ✨✨✨ 关键修复：确保事件状态被重置 ✨✨✨
         Game.state.isEventActive = false;
         this.modalState.xiZhaoActive = false;
@@ -1769,6 +1868,387 @@ const UI = {
             ${historyHtml}
         </div>
     `;
+    },
+
+    // ====================== 全国大赛弹窗 ======================
+
+    // ====================== 全国大赛单场比赛结果弹窗 ======================
+    // ====================== 全国大赛单场比赛结果弹窗 ======================
+    showNationalMatchModal: function (data) {
+        // 关闭其他弹窗
+        this.closeAllModals();
+
+        Game.state.isEventActive = true;
+        this.updateButtons();
+
+        // 获取弹窗容器
+        const modal = document.getElementById('nationalModal');
+        if (!modal) {
+            console.error('错误：找不到 nationalModal 元素，请在 HTML 中添加');
+            return;
+        }
+
+        const resultColor = data.win ? '#22c55e' : '#ef4444';
+        const resultText = data.win ? '🎉 胜利' : '🌧️ 失利';
+        const resultBg = data.win ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+
+        // 生成球员成长摘要
+        let playerGrowthHtml = '';
+        if (data.changes && Game.state.playerList && Game.state.playerList.length > 0) {
+            // 获取球技最高的3名球员
+            let topPlayers = [...Game.state.playerList].sort((a, b) => b.skill - a.skill).slice(0, 3);
+
+            let playersHtml = '';
+            for (let i = 0; i < topPlayers.length; i++) {
+                let p = topPlayers[i];
+                playersHtml += `
+                <div style="text-align: center;">
+                    <div style="color: #4A2C00; font-weight: bold; font-size: 15px;">${p.name}</div>
+                    <div style="color: #22c55e; font-size: 13px;">⚡ +${Math.floor(p.skill / 10) + 2}</div>
+                </div>
+            `;
+            }
+
+            playerGrowthHtml = `
+            <div style="background: #FFE5B4; border-radius: 16px; padding: 15px; margin-top: 15px; border: 1px solid #FFD700;">
+                <div style="color: #4A2C00; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; font-weight: bold;">
+                    <span>⭐</span>
+                    <span>表现突出的球员</span>
+                </div>
+                <div style="display: flex; justify-content: space-around;">
+                    ${playersHtml}
+                </div>
+            </div>
+        `;
+        }
+
+        modal.innerHTML = `
+        <div style="
+            background: linear-gradient(135deg, #FFF9E6 0%, #FFF0D4 100%);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            border: 3px solid #FFD700;
+            width: 600px;
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+        ">
+            
+            <!-- 头部 - 固定 -->
+            <div style="
+                background: linear-gradient(90deg, #FFD700, #FFA500, #FFD700);
+                padding: 18px 25px;
+                text-align: center;
+                flex-shrink: 0;
+            ">
+                <div style="font-size: 24px; font-weight: bold; color: #4A2C00;">🏆 全国女子棒球城市联赛 🏆</div>
+                <div style="font-size: 16px; color: #4A2C00; margin-top: 5px;">第 ${data.day}/5 日 · ${
+            data.opponent.name
+        }</div>
+            </div>
+            
+            <!-- 内容 - 滚动区域 -->
+            <div style="
+                padding: 20px 25px;
+                overflow-y: auto;
+                flex: 1;
+            ">
+                
+                <!-- 比分卡片 -->
+                <div style="background: ${resultBg}; border-radius: 20px; padding: 20px; border: 2px solid ${resultColor}; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                    
+                    <!-- VS 显示 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="text-align: center; flex: 1;">
+                            <div style="color: #4A2C00; font-size: 18px; font-weight: bold; margin-bottom: 8px;">${
+                                Game.state.teamName
+                            }</div>
+                            <div style="font-size: 52px; font-weight: bold; color: ${
+                                data.win ? resultColor : '#4A2C00'
+                            };">${data.teamScore}</div>
+                        </div>
+                        
+                        <div style="font-size: 28px; font-weight: bold; color: #FFA500; padding: 0 15px;">VS</div>
+                        
+                        <div style="text-align: center; flex: 1;">
+                            <div style="color: #4A2C00; font-size: 18px; font-weight: bold; margin-bottom: 8px;">${
+                                data.opponent.name
+                            }</div>
+                            <div style="font-size: 52px; font-weight: bold; color: ${
+                                !data.win ? resultColor : '#4A2C00'
+                            };">${data.oppScore}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 比赛结果标签 -->
+                    <div style="text-align: center; margin-top: 15px;">
+                        <span style="background: ${resultColor}; color: white; font-weight: bold; padding: 5px 25px; border-radius: 30px; font-size: 16px;">
+                            ${resultText}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- 比赛精彩瞬间 -->
+                <div style="background: #FFE5B4; border-radius: 16px; padding: 12px; margin-top: 15px; border-left: 4px solid #FFD700;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <span style="color: #FFA500; font-size: 18px;">⚾</span>
+                        <span style="color: #4A2C00; font-weight: bold; font-size: 14px;">精彩瞬间</span>
+                    </div>
+                    <div style="color: #4A2C00; font-size: 13px; line-height: 1.5;">
+                        ${
+                            data.win
+                                ? '九局下半，再见安打！全队冲入场内欢呼庆祝！'
+                                : '虽然落败，但年轻球员展现出了惊人的潜力。'
+                        }
+                    </div>
+                </div>
+                
+                <!-- 成长数据 -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 15px;">
+                    <div style="background: #FFE5B4; border-radius: 16px; padding: 12px; text-align: center; border: 1px solid #FFD700;">
+                        <div style="color: #4A2C00; font-size: 12px; margin-bottom: 4px;">⚡ 创始人球技</div>
+                        <div style="color: ${
+                            data.changes && data.changes.skill > 0 ? '#22c55e' : '#ef4444'
+                        }; font-size: 24px; font-weight: bold;">
+                            ${
+                                data.changes && data.changes.skill
+                                    ? (data.changes.skill > 0 ? '+' : '') + data.changes.skill
+                                    : 0
+                            }
+                        </div>
+                    </div>
+                    <div style="background: #FFE5B4; border-radius: 16px; padding: 12px; text-align: center; border: 1px solid #FFD700;">
+                        <div style="color: #4A2C00; font-size: 12px; margin-bottom: 4px;">✨ 精神力</div>
+                        <div style="color: ${
+                            data.changes && data.changes.spirit > 0 ? '#22c55e' : '#ef4444'
+                        }; font-size: 24px; font-weight: bold;">
+                            ${
+                                data.changes && data.changes.spirit
+                                    ? (data.changes.spirit > 0 ? '+' : '') + data.changes.spirit
+                                    : 0
+                            }
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 球员表现 -->
+                ${playerGrowthHtml}
+                
+            </div>
+            
+            <!-- 按钮 - 固定 -->
+            <div style="
+                padding: 0 25px 25px 25px;
+                flex-shrink: 0;
+            ">
+                <button onclick="UI.handleNationalNextDay()" 
+                    style="
+                        width: 100%;
+                        background: linear-gradient(90deg, #FFD700, #FFA500);
+                        border: none;
+                        padding: 14px;
+                        border-radius: 50px;
+                        color: #4A2C00;
+                        font-weight: bold;
+                        font-size: 16px;
+                        cursor: pointer;
+                        border: 1px solid #FFD700;
+                    ">
+                    ⚾ 明日再战 → ⚾
+                </button>
+            </div>
+            
+        </div>
+    `;
+
+        modal.style.display = 'flex';
+    },
+
+    // ====================== 全国大赛总结弹窗 ======================
+    showNationalSummaryModal: function (data) {
+        this.closeAllModals();
+
+        Game.state.isEventActive = true;
+        this.updateButtons();
+
+        const modal = document.getElementById('nationalModal');
+        if (!modal) {
+            console.error('错误：找不到 nationalModal 元素');
+            return;
+        }
+
+        // 根据排名设置不同的颜色
+        const rankColors = {
+            '🏆 全国冠军': { bg: 'linear-gradient(135deg, #FFD700, #FFA500)', color: '#4A2C00', shadow: '#FFD700' },
+            '🥈 全国亚军': { bg: 'linear-gradient(135deg, #C0C0C0, #E0E0E0)', color: '#2C2C2C', shadow: '#C0C0C0' },
+            '🥉 全国季军': { bg: 'linear-gradient(135deg, #CD7F32, #B87333)', color: '#2C1B0E', shadow: '#CD7F32' },
+            全国第四: { bg: 'linear-gradient(135deg, #4A90E2, #357ABD)', color: 'white', shadow: '#4A90E2' },
+            全国第五: { bg: 'linear-gradient(135deg, #50C878, #3CB371)', color: 'white', shadow: '#50C878' },
+            全国第六: { bg: 'linear-gradient(135deg, #9CA3AF, #6B7280)', color: 'white', shadow: '#9CA3AF' },
+        };
+
+        const rankStyle = rankColors[data.rank] || rankColors['全国第六'];
+
+        // 生成比赛列表
+        let matchesHtml = '';
+        data.matches.forEach((m, index) => {
+            const isWin = m.win;
+            const bgColor = isWin ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+            const borderColor = isWin ? '#22c55e' : '#ef4444';
+            const scoreColor = isWin ? '#22c55e' : '#ef4444';
+
+            matchesHtml += `
+            <div style="background: ${bgColor}; border-left: 6px solid ${borderColor}; border-radius: 12px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="font-size: 20px;">${isWin ? '🏆' : '🌧️'}</div>
+                    <div>
+                        <div style="color: #4A2C00; font-weight: bold; font-size: 14px;">第${index + 1}日 vs ${
+                m.opponent
+            }</div>
+                        <div style="color: #666; font-size: 11px;">${isWin ? '精彩胜利' : '遗憾落败'}</div>
+                    </div>
+                </div>
+                <div style="font-size: 22px; font-weight: bold; color: ${scoreColor};">${m.teamScore}:${
+                m.oppScore
+            }</div>
+            </div>
+        `;
+        });
+
+        // 计算总胜场
+        const wins = data.matches.filter((m) => m.win).length;
+        const losses = 5 - wins;
+
+        modal.innerHTML = `
+        <div style="
+            background: linear-gradient(135deg, #FFF9E6 0%, #FFF0D4 100%);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            border: 3px solid ${rankStyle.shadow};
+            width: 620px;
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+        ">
+            
+            <!-- 头部 - 固定 -->
+            <div style="
+                background: ${rankStyle.bg};
+                padding: 20px;
+                text-align: center;
+                flex-shrink: 0;
+            ">
+                <div style="font-size: 42px; margin-bottom: 5px;">🏆</div>
+                <div style="font-size: 28px; font-weight: bold; color: ${rankStyle.color};">${data.rank}</div>
+                <div style="font-size: 14px; color: ${rankStyle.color}; margin-top: 5px;">全国女子棒球城市联赛</div>
+            </div>
+            
+            <!-- 内容 - 滚动区域 -->
+            <div style="
+                padding: 20px 25px;
+                overflow-y: auto;
+                flex: 1;
+            ">
+                
+                <!-- 战绩统计卡片 -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div style="background: #FFE5B4; border-radius: 16px; padding: 15px; text-align: center; border: 2px solid #22c55e;">
+                        <div style="color: #22c55e; font-size: 13px; font-weight: bold; margin-bottom: 5px;">胜场</div>
+                        <div style="color: #4A2C00; font-size: 36px; font-weight: bold;">${wins}</div>
+                    </div>
+                    <div style="background: #FFE5B4; border-radius: 16px; padding: 15px; text-align: center; border: 2px solid #ef4444;">
+                        <div style="color: #ef4444; font-size: 13px; font-weight: bold; margin-bottom: 5px;">负场</div>
+                        <div style="color: #4A2C00; font-size: 36px; font-weight: bold;">${losses}</div>
+                    </div>
+                </div>
+                
+                <!-- 比赛详情标题 -->
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="color: #FFA500; font-size: 18px;">📋</span>
+                    <span style="color: #4A2C00; font-weight: bold; font-size: 16px;">五场征程</span>
+                </div>
+                
+                <!-- 比赛列表 -->
+                ${matchesHtml}
+                
+                <!-- 大赛收获 -->
+                <div style="background: #FFE5B4; border-radius: 16px; padding: 18px; margin-top: 20px; border: 2px solid #FFD700;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                        <span style="color: #FFA500; font-size: 18px;">📈</span>
+                        <span style="color: #4A2C00; font-weight: bold; font-size: 15px;">大赛收获</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="text-align: center;">
+                            <div style="color: #4A2C00; font-size: 12px; margin-bottom: 4px;">✨ 精神力成长</div>
+                            <div style="color: ${
+                                data.spiritReward >= 0 ? '#22c55e' : '#ef4444'
+                            }; font-size: 26px; font-weight: bold;">
+                                ${data.spiritReward > 0 ? '+' : ''}${data.spiritReward}
+                            </div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="color: #4A2C00; font-size: 12px; margin-bottom: 4px;">❤️ 人际关系成长</div>
+                            <div style="color: ${
+                                data.relationReward >= 0 ? '#22c55e' : '#ef4444'
+                            }; font-size: 26px; font-weight: bold;">
+                                ${data.relationReward > 0 ? '+' : ''}${data.relationReward}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 球员成长摘要 -->
+                    <div style="margin-top: 15px; padding-top: 12px; border-top: 2px dashed #FFD700; text-align: center;">
+                        <div style="color: #4A2C00; font-size: 12px; margin-bottom: 5px;">⚡ 球员球技平均提升</div>
+                        <div style="color: #22c55e; font-size: 22px; font-weight: bold;">+${Math.round(
+                            Math.random() * 3 + 4
+                        )}</div>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- 按钮 - 固定 -->
+            <div style="
+                padding: 0 25px 25px 25px;
+                flex-shrink: 0;
+            ">
+                <button onclick="UI.handleNationalFinish()" 
+                    style="
+                        width: 100%;
+                        background: linear-gradient(90deg, #FFD700, #FFA500);
+                        border: none;
+                        padding: 14px;
+                        border-radius: 50px;
+                        color: #4A2C00;
+                        font-weight: bold;
+                        font-size: 16px;
+                        cursor: pointer;
+                        border: 1px solid #FFD700;
+                    ">
+                    继续征程 →
+                </button>
+            </div>
+            
+            <!-- 底部装饰 -->
+            <div style="height: 4px; background: linear-gradient(90deg, #FFD700, #FFA500, #FFD700); flex-shrink: 0;"></div>
+            
+        </div>
+    `;
+
+        modal.style.display = 'flex';
+    },
+
+    // 处理明日再战
+    handleNationalNextDay: function () {
+        Game.handleNationalNextDay();
+    },
+
+    // 处理比赛结束
+    handleNationalFinish: function () {
+        Game.handleNationalFinish();
     },
 };
 
