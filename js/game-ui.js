@@ -2296,6 +2296,31 @@ const UI = {
     handleNationalFinish: function () {
         Game.handleNationalFinish();
     },
+    // ====================== 显示全部比赛记录 ======================
+    showAllMatchHistory: function () {
+        if (Game.state.matchHistory.length === 0) {
+            alert('暂无比赛记录');
+            return;
+        }
+
+        // 按日期倒序排列（最新的在前）
+        let matches = [...Game.state.matchHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        let message = '📋 全部比赛记录\n\n';
+        matches.forEach((match, index) => {
+            let result = match.win ? '🏆 胜' : '🌧️ 负';
+            message += `${index + 1}. ${match.date} ${match.title}\n`;
+            message += `   ${Game.state.teamName} ${match.score} ${match.opponent} ${result}\n\n`;
+        });
+
+        // 使用自定义弹窗或 alert
+        if (confirm) {
+            // 如果有自定义弹窗就用，没有就用 alert
+            UI.showInfoModal('📋 全部比赛记录', message.replace(/\n/g, '<br>'), { buttonText: '关闭' });
+        } else {
+            alert(message);
+        }
+    },
 };
 
 // ====================== 导出全局访问 ======================
