@@ -1215,10 +1215,6 @@ const Game = {
             let names = notFriends.map((m) => m.name).join('、');
             UI.addLog(`💬 ${player.name}和${names}还需要时间熟悉`, {});
         }
-
-        // 检查是否有人因为player的加入而触发新的关系变化
-        // 比如player的仇敌可能会因此敌视整个小团体
-        this.checkFactionJoiningEffects(player, targetFaction);
     },
 
     createFaction: function (a, b, c) {
@@ -1254,7 +1250,6 @@ const Game = {
         player.faction = faction;
 
         // 5. 日志（注意：这里用 faction.members[0] 是安全的，因为已经至少有一个成员）
-        UI.addLog(`👋 ${player.name}加入了${faction.members[0].name}的小团体`, {});
         UI.renderFactionsList();
     },
 
