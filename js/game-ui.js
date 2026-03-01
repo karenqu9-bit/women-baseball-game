@@ -553,6 +553,7 @@ const UI = {
     },
 
     // ====================== 球员选择弹窗 ======================
+    // ====================== 球员选择弹窗 ======================
     openPlayerSelectModal: function () {
         if (
             !Game.state.gameStarted ||
@@ -572,22 +573,56 @@ const UI = {
         let playersHtml = '';
 
         Game.state.playerList.forEach((player) => {
+            // 忠诚度颜色
+            let loyaltyColor = '#22c55e';
+            if (player.loyalty < 30) loyaltyColor = '#ef4444';
+            else if (player.loyalty < 60) loyaltyColor = '#eab308';
+
+            // 球技颜色
+            let skillColor = '#3b82f6';
+            if (player.skill < 30) skillColor = '#94a3b8';
+            else if (player.skill < 60) skillColor = '#60a5fa';
+
             playersHtml += `
-                <div class="player-select-card" onclick="UI.selectPlayerForTalk(${player.id})">
-                    <h4 style="margin:0 0 5px 0;">⚾ ${player.name}</h4>
-                    <div class="player-attr"><span>❤️ 忠诚</span><span>${player.loyalty}</span></div>
-                    <div class="player-attr"><span>⚡ 球技</span><span>${player.skill}</span></div>
+            <div class="player-select-card" onclick="UI.selectPlayerForTalk(${player.id})">
+                <h4 style="margin:0 0 8px 0; color:#2d3748;">⚾ ${player.name}</h4>
+                
+                <!-- 忠诚度进度条 -->
+                <div style="margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+                        <span style="color:#718096;">❤️ 忠诚</span>
+                        <span style="font-weight:bold; color:${loyaltyColor};">${player.loyalty}</span>
+                    </div>
+                    <div style="width:100%; height:8px; background:#fee2e2; border-radius:4px; overflow:hidden;">
+                        <div style="width:${player.loyalty}%; height:100%; background:${loyaltyColor}; border-radius:4px;"></div>
+                    </div>
                 </div>
-            `;
+                
+                <!-- 球技进度条 -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+                        <span style="color:#718096;">⚡ 球技</span>
+                        <span style="font-weight:bold; color:${skillColor};">${player.skill}</span>
+                    </div>
+                    <div style="width:100%; height:8px; background:#dbeafe; border-radius:4px; overflow:hidden;">
+                        <div style="width:${player.skill}%; height:100%; background:${skillColor}; border-radius:4px;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
         });
 
         modal.innerHTML = `
-            <div class="event-modal-content">
-                <h2 class="event-modal-title">💬 选择沟通对象</h2>
-                <div class="player-selector">${playersHtml}</div>
-                <div class="event-modal-buttons"><button onclick="UI.closePlayerSelectModal()" style="background:#718096;">取消</button></div>
+        <div class="event-modal-content" style="width: 550px; max-width: 90vw;">
+            <h2 class="event-modal-title" style="margin-bottom: 15px;">💬 选择沟通对象</h2>
+            <div class="player-selector" style="grid-template-columns: repeat(3, 1fr); gap: 12px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                ${playersHtml}
             </div>
-        `;
+            <div class="event-modal-buttons" style="margin-top: 15px;">
+                <button onclick="UI.closePlayerSelectModal()" style="background:#718096;">取消</button>
+            </div>
+        </div>
+    `;
 
         modal.style.display = 'flex';
     },
@@ -641,6 +676,7 @@ const UI = {
     },
 
     // ====================== 自主训练选择弹窗 ======================
+    // ====================== 自主训练选择弹窗 ======================
     openSelfTrainPlayerSelect: function () {
         if (
             !Game.state.gameStarted ||
@@ -661,44 +697,75 @@ const UI = {
         let gridCols = Game.state.playerList.length >= 15 ? 4 : Game.state.playerList.length >= 8 ? 3 : 2;
 
         Game.state.playerList.forEach((player) => {
+            // 忠诚度颜色
+            let loyaltyColor = '#22c55e';
+            if (player.loyalty < 30) loyaltyColor = '#ef4444';
+            else if (player.loyalty < 60) loyaltyColor = '#eab308';
+
+            // 球技颜色
+            let skillColor = '#3b82f6';
+            if (player.skill < 30) skillColor = '#94a3b8';
+            else if (player.skill < 60) skillColor = '#60a5fa';
+
             playersHtml += `
-                <div class="player-select-card compact" onclick="if(!event.target.classList.contains('rel-icon-small')) UI.toggleSelectPlayerForTrain(${player.id})" id="trainSelect-${player.id}">
-                    <h4>⚾ ${player.name}</h4>
-                    <div class="player-attr"><span>❤️ 忠诚</span><span>${player.loyalty}</span></div>
-                    <div class="player-attr"><span>⚡ 球技</span><span>${player.skill}</span></div>
-                    <div class="player-rel-icons-small"></div>
-                    <div class="selected-mark" id="selectedMark-${player.id}" style="display:none;">✓</div>
+            <div class="player-select-card compact" onclick="if(!event.target.classList.contains('rel-icon-small')) UI.toggleSelectPlayerForTrain(${player.id})" 
+                 id="trainSelect-${player.id}" style="position: relative; padding: 10px;">
+                <h4 style="margin:0 0 8px 0; font-size: 14px;">⚾ ${player.name}</h4>
+                
+                <!-- 忠诚度进度条 -->
+                <div style="margin-bottom: 6px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px;">
+                        <span style="color:#718096;">❤️ 忠诚</span>
+                        <span style="font-weight:bold; color:${loyaltyColor};">${player.loyalty}</span>
+                    </div>
+                    <div style="width:100%; height:6px; background:#fee2e2; border-radius:3px; overflow:hidden;">
+                        <div style="width:${player.loyalty}%; height:100%; background:${loyaltyColor}; border-radius:3px;"></div>
+                    </div>
                 </div>
-            `;
+                
+                <!-- 球技进度条 -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px;">
+                        <span style="color:#718096;">⚡ 球技</span>
+                        <span style="font-weight:bold; color:${skillColor};">${player.skill}</span>
+                    </div>
+                    <div style="width:100%; height:6px; background:#dbeafe; border-radius:3px; overflow:hidden;">
+                        <div style="width:${player.skill}%; height:100%; background:${skillColor}; border-radius:3px;"></div>
+                    </div>
+                </div>
+                
+                <div class="selected-mark" id="selectedMark-${player.id}" style="display:none;">✓</div>
+            </div>
+        `;
         });
 
         let gridStyle = `grid-template-columns: repeat(${gridCols}, 1fr);`;
 
         modal.innerHTML = `
-            <div class="event-modal-content self-train-modal">
-                <div class="modal-header">
-                    <h2 class="event-modal-title" style="font-size:16px; margin-bottom:5px;">🏃 选择一起训练的球员</h2>
-                    <p style="font-size:12px; color:#e24070; text-align:center; font-weight:bold;">请选择两名球员一起训练</p>
-                </div>
-                
-                <div class="player-selector compact" style="${gridStyle} max-height:350px; overflow-y:auto; padding-right:3px;">
-                    ${playersHtml}
-                </div>
-                
-                <div class="selected-count-bar" id="selectedCount">
-                    已选择 <span style="font-size:16px; font-weight:bold;">0</span> / 2 位球员
-                </div>
-                
-                <div class="event-modal-buttons compact">
-                    <button onclick="UI.confirmSelfTrain()" style="background:#22c55e; flex:2;" id="confirmTrainBtn" disabled>开始训练</button>
-                    <button onclick="UI.closePlayerSelectModal()" style="background:#718096; flex:1;">取消</button>
-                </div>
-                
-                <p style="font-size:11px; color:#999; text-align:center; margin:5px 0 0 0;">
-                    💡 当前球队共 ${Game.state.playerList.length} 人
-                </p>
+        <div class="event-modal-content self-train-modal" style="width: 650px; max-width: 95vw;">
+            <div class="modal-header">
+                <h2 class="event-modal-title" style="font-size:16px; margin-bottom:5px;">🏃 选择一起训练的球员</h2>
+                <p style="font-size:12px; color:#e24070; text-align:center; font-weight:bold;">请选择两名球员一起训练</p>
             </div>
-        `;
+            
+            <div class="player-selector compact" style="${gridStyle} max-height:400px; overflow-y:auto; padding-right:5px; gap: 8px;">
+                ${playersHtml}
+            </div>
+            
+            <div class="selected-count-bar" id="selectedCount" style="margin: 10px 0;">
+                已选择 <span style="font-size:16px; font-weight:bold;">0</span> / 2 位球员
+            </div>
+            
+            <div class="event-modal-buttons compact" style="display: flex; gap: 10px;">
+                <button onclick="UI.confirmSelfTrain()" style="background:#22c55e; flex:2;" id="confirmTrainBtn" disabled>开始训练</button>
+                <button onclick="UI.closePlayerSelectModal()" style="background:#718096; flex:1;">取消</button>
+            </div>
+            
+            <p style="font-size:11px; color:#999; text-align:center; margin:8px 0 0 0;">
+                💡 当前球队共 ${Game.state.playerList.length} 人
+            </p>
+        </div>
+    `;
 
         modal.style.display = 'flex';
         Game.state.selectedTrainPlayers = new Set();
