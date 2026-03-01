@@ -676,7 +676,6 @@ const UI = {
     },
 
     // ====================== 自主训练选择弹窗 ======================
-    // ====================== 自主训练选择弹窗 ======================
     openSelfTrainPlayerSelect: function () {
         if (
             !Game.state.gameStarted ||

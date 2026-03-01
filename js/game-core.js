@@ -2379,12 +2379,12 @@ const Game = {
         // 小团体数量
         const factionsCount = this.getActiveFactions().length;
 
-        // 比赛数据
-        const totalMatches = this.state.seasonMatchCount;
-        const wins = this.state.seasonWinCount;
+        // ===== 修改：从 matchHistory 获取总比赛数据 =====
+        const totalMatches = this.state.matchHistory.length;
+        const wins = this.state.matchHistory.filter((m) => m.win).length;
         const losses = totalMatches - wins;
         const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
-
+        // ===== 结束 =====
         return {
             reason: reason,
             message: message,
@@ -3754,17 +3754,17 @@ const Game = {
         if (teamLevelDelta !== 0) {
             logData.teamLevel = teamLevelDelta;
         }
-        UI.addLog('📝 制定训练计划', logData);
+        UI.addLog('📚 进行技术理论学习', logData);
 
         // 构建弹窗消息
-        let message = `制定了训练计划，下周训练效果会更好！<br>`;
+        let message = `你花时间研究了新的棒球技术理论，本周末训练效果会更好！<br>`;
         message += `✨ 你的球技 ${skillDelta > 0 ? '+' : ''}${skillDelta}<br>`;
         if (teamLevelDelta !== 0) {
             message += `📊 球队实力 ${teamLevelDelta > 0 ? '+' : ''}${teamLevelDelta}`;
         }
 
         // 显示结果弹窗
-        UI.showResultModal('📝 制定训练计划', message, {
+        UI.showResultModal('📚 技术理论学习', message, {
             spirit: spiritDelta,
             skill: skillDelta,
             teamLevel: teamLevelDelta !== 0 ? teamLevelDelta : undefined,
@@ -3772,9 +3772,6 @@ const Game = {
 
         // ✅ 设置标志，等结果弹窗关闭后再执行 finishAction
         window.pendingFinishAction = true;
-
-        // 结束行动（推进日期）
-        this.finishAction();
     },
 
     // ====================== 自主训练 ======================
@@ -4452,9 +4449,9 @@ const Game = {
         // 构建计划加成显示
         let planBonusText = '';
         if (this.state.trainPlanCountThisWeek > 0) {
-            planBonusText = `<br>📋 本周制定训练计划 ${this.state.trainPlanCountThisWeek} 次，额外获得球技 +${planBonus}！`;
+            planBonusText = `<br>📚 本周进行了 ${this.state.trainPlanCountThisWeek} 次技术理论学习，额外获得球技 +${planBonus}！`;
         }
-        console.log('训练计划次数:', this.state.trainPlanCountThisWeek, '加成:', planBonus, '文字:', planBonusText);
+        console.log('技术理论学习:', this.state.trainPlanCountThisWeek, '加成:', planBonus, '文字:', planBonusText);
         // 弹窗
         UI.showEventResultModal(
             '🏋️ 参加训练',

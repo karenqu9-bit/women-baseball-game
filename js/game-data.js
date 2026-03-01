@@ -813,7 +813,7 @@ const RANDOM_EVENT_POOL = [
                         extraText += `<br>⚡ 球技变化: ${skillDelta > 0 ? '+' : ''}${skillDelta}`;
                     }
 
-                    UI.showResultModal('👀 随便看看', `看了十分钟就犯困了……${extraText}`, changes);
+                    UI.showResultModal('👀 随便看看', `看了十分钟就犯困了……`);
                 },
             },
         ],
