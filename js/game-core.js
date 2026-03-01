@@ -93,6 +93,9 @@ const Game = {
         seasonJoinCount: 0,
         seasonLeaveCount: 0,
 
+        maxPlayers: 0, // 历史最多球员数
+        startDate: null, // 游戏开始日期（用于计算存活天数）
+
         // 比赛历史
         matchHistory: [],
 
@@ -1333,6 +1336,10 @@ const Game = {
         let oldTeamLevel = this.state.teamLevel;
 
         this.state.playerList.push(newPlayer);
+        // ===== 新增：更新最多球员记录 =====
+        if (this.state.playerList.length > this.state.stats.maxPlayers) {
+            this.state.stats.maxPlayers = this.state.playerList.length;
+        }
         this.state.recruitedOriginalNames.add(recruitItem.name);
 
         let currentDateObj = new Date(this.state.currentDate);
@@ -1692,7 +1699,9 @@ const Game = {
         if (this.state.relation <= 0) {
             this.state.relation = 0;
             this.state.gameOver = true;
-            this.showGameOverModal('人际关系归零', '和队员连普通朋友都算不上了……');
+            // ===== 使用统一的统计函数 =====
+            const stats = this.getGameOverStats('人际关系归零', '和队员连普通朋友都算不上了……');
+            this.showGameOverModal('人际关系归零', '和队员连普通朋友都算不上了……', stats);
             return;
         }
         if (this.state.relation < 10 && this.state.relation > 0 && !this.state.relationWarningShown) {
@@ -1710,6 +1719,10 @@ const Game = {
         if (!this.state.gameStarted || this.state.gameOver) return;
         if (this.state.mood < 10 && this.state.mood > 0 && !this.state.moodWarningShown) {
             this.state.moodWarningShown = true;
+            // ===== 使用统一的统计函数 =====
+            const stats = this.getGameOverStats('队内气氛归零', '大家见面都不打招呼了。');
+            this.showGameOverModal('队内气氛归零', '大家见面都不打招呼了。', stats);
+            return;
             UI.showInfoModal('⚠️ 队内气氛低迷', `球队气氛只剩 ${this.state.mood} 了。`, { buttonText: '我知道了' });
         }
         if (this.state.mood >= 10) this.state.moodWarningShown = false;
@@ -2300,43 +2313,170 @@ const Game = {
         ]);
     },
     // ====================== 游戏结束检查 ======================
+    // ====================== 游戏结束检查 ======================
     checkGameOver: function () {
         if (this.state.gameOver) return;
 
+        console.log('检查游戏结束:', {
+            spirit: this.state.spirit,
+            playerCount: this.state.playerList.length,
+            mood: this.state.mood,
+            relation: this.state.relation,
+        });
+
+        let reason = '';
+        let message = '';
+
         if (this.state.spirit <= 0) {
             this.state.spirit = 0;
-            this.state.gameOver = true;
-            this.showGameOverModal('精神力归零', '业余球队这么卷干什么，又不是打奥运会！');
-            return;
-        }
-        if (this.state.playerList.length < 5) {
-            this.state.gameOver = true;
-            this.showGameOverModal('球员不足', '凑不齐首发九人……解散吧。');
-            return;
-        }
-        if (this.state.mood <= 0) {
+            reason = '精神力归零';
+            message = '业余球队这么卷干什么，又不是打奥运会！';
+        } else if (this.state.playerList.length < 5) {
+            reason = '球员不足';
+            message = '凑不齐首发九人……解散吧。';
+        } else if (this.state.mood <= 0) {
             this.state.mood = 0;
-            this.state.gameOver = true;
-            this.showGameOverModal('队内气氛归零', '大家见面都不打招呼了。');
-            return;
-        }
-        if (this.state.relation <= 0) {
+            reason = '队内气氛归零';
+            message = '大家见面都不打招呼了。';
+        } else if (this.state.relation <= 0) {
             this.state.relation = 0;
-            this.state.gameOver = true;
-            this.showGameOverModal('人际关系归零', '和队员连普通朋友都算不上了……');
-            return;
+            reason = '人际关系归零';
+            message = '和队员连普通朋友都算不上了……';
+        } else {
+            return; // 游戏未结束
         }
+
+        // 游戏结束
+        this.state.gameOver = true;
+
+        // 使用统一的统计函数
+        const stats = this.getGameOverStats(reason, message);
+
+        this.showGameOverModal(reason, message, stats);
+    },
+
+    // ====================== 获取游戏结束统计数据 ======================
+    getGameOverStats: function (reason, message) {
+        console.log('【调试】stats对象:', this.state.stats);
+        console.log('【调试】maxPlayers:', this.state.stats?.maxPlayers);
+        console.log('【调试】当前球员数:', this.state.playerList.length);
+        // 计算存活天数
+        const startDate = this.state.stats?.startDate || this.state.seasonStartDate;
+        const endDate = this.state.currentDate;
+        const daysSurvived = Math.floor((endDate - startDate) / (1000 * 3600 * 24));
+
+        // 计算死党和仇敌对数
+        let deadFriendPairs = 0;
+        let enemyPairs = 0;
+        for (let i = 0; i < this.state.playerList.length; i++) {
+            for (let j = i + 1; j < this.state.playerList.length; j++) {
+                let value = this.getRelationshipValue(this.state.playerList[i], this.state.playerList[j]);
+                if (value >= 60) deadFriendPairs++;
+                if (value <= -60) enemyPairs++;
+            }
+        }
+
+        // 小团体数量
+        const factionsCount = this.getActiveFactions().length;
+
+        // 比赛数据
+        const totalMatches = this.state.seasonMatchCount;
+        const wins = this.state.seasonWinCount;
+        const losses = totalMatches - wins;
+        const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
+
+        return {
+            reason: reason,
+            message: message,
+            daysSurvived: daysSurvived,
+            maxPlayers: this.state.stats?.maxPlayers || this.state.playerList.length,
+            deadFriendPairs: deadFriendPairs,
+            enemyPairs: enemyPairs,
+            factionsCount: factionsCount,
+            totalMatches: totalMatches,
+            wins: wins,
+            losses: losses,
+            winRate: winRate,
+        };
     },
     // ====================== 游戏结束弹窗 ======================
-    showGameOverModal: function (reason, message) {
+    showGameOverModal: function (reason, message, stats) {
         this.state.isEventActive = true;
         UI.updateButtons();
 
-        let desc = `
-            <div style="text-align:center; margin-bottom:15px;">
-                <span style="background:#ffebee; padding:6px 12px; border-radius:20px; color:#c62828; font-weight:bold;">${reason}</span>
+        // ===== 如果没有传入 stats，现场计算（兼容旧调用） =====
+        if (!stats) {
+            stats = this.getGameOverStats(reason, message);
+        }
+        // ===== 结束 =====
+
+        // 构建统计数据的HTML
+        const statsHtml = `
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 2px dashed #ffcdd2;">
+                <div style="font-size: 16px; font-weight: bold; color: #c62828; margin-bottom: 12px; text-align: center;">
+                    📊 赛季数据
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
+                    <div style="background: #fff5f5; padding: 8px; border-radius: 6px;">
+                        <span style="color: #666;">⏱️ 存活天数</span><br>
+                        <span style="font-size: 18px; font-weight: bold; color: #c62828;">${stats.daysSurvived}天</span>
+                    </div>
+                    <div style="background: #fff5f5; padding: 8px; border-radius: 6px;">
+                        <span style="color: #666;">👥 最多球员</span><br>
+                        <span style="font-size: 18px; font-weight: bold; color: #c62828;">${stats.maxPlayers}人</span>
+                    </div>
+                    <div style="background: #fff5f5; padding: 8px; border-radius: 6px;">
+                        <span style="color: #666;">💕 死党</span><br>
+                        <span style="font-size: 18px; font-weight: bold; color: #c62828;">${
+                            stats.deadFriendPairs
+                        }对</span>
+                    </div>
+                    <div style="background: #fff5f5; padding: 8px; border-radius: 6px;">
+                        <span style="color: #666;">💢 仇敌</span><br>
+                        <span style="font-size: 18px; font-weight: bold; color: #c62828;">${stats.enemyPairs}对</span>
+                    </div>
+                    <div style="background: #fff5f5; padding: 8px; border-radius: 6px;">
+                        <span style="color: #666;">👥 小团体</span><br>
+                        <span style="font-size: 18px; font-weight: bold; color: #c62828;">${
+                            stats.factionsCount
+                        }个</span>
+                    </div>
+                    <div style="background: #fff5f5; padding: 8px; border-radius: 6px; grid-column: span 2;">
+                        <div style="display: flex; justify-content: space-around; text-align: center;">
+                            <div>
+                                <span style="color: #666;">⚾ 总场次</span><br>
+                                <span style="font-size: 16px; font-weight: bold; color: #c62828;">${
+                                    stats.totalMatches
+                                }</span>
+                            </div>
+                            <div>
+                                <span style="color: #666;">🏆 胜场</span><br>
+                                <span style="font-size: 16px; font-weight: bold; color: #2e7d32;">${stats.wins}</span>
+                            </div>
+                            <div>
+                                <span style="color: #666;">🌧️ 负场</span><br>
+                                <span style="font-size: 16px; font-weight: bold; color: #c62828;">${stats.losses}</span>
+                            </div>
+                            <div>
+                                <span style="color: #666;">📊 胜率</span><br>
+                                <span style="font-size: 16px; font-weight: bold; color: ${
+                                    stats.winRate >= 50 ? '#2e7d32' : '#c62828'
+                                };">${stats.winRate}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div style="text-align:center;">${message}</div>
+        `;
+
+        let desc = `
+            <div style="text-align:center;">
+                <div style="margin-bottom: 15px;">
+                    <span style="background:#ffebee; padding:6px 12px; border-radius:20px; color:#c62828; font-weight:bold;">${reason}</span>
+                </div>
+                <div style="text-align:center; font-size: 14px; color: #333;">${message}</div>
+                ${statsHtml}
+            </div>
         `;
 
         UI.showResultModal('💔 游戏结束', desc, {});
@@ -4425,7 +4565,12 @@ const Game = {
         this.state.skill = 20;
         this.state.relation = 50;
         this.state.mood = 50;
-
+        // ===== 新增：初始化统计 =====
+        this.state.stats = {
+            maxPlayers: this.state.playerList.length, // 初始球员数
+            startDate: new Date(this.state.currentDate), // 记录开始日期
+        };
+        // ===== 结束 =====
         // 时间和赛季设置
         this.state.currentDate = new Date(2024, 2, 8);
         this.state.seasonStartDate = new Date(2024, 2, 8);
