@@ -1424,7 +1424,7 @@ const UI = {
 
     // ====================== 曦照赛总结弹窗 ======================
     // ====================== 曦照赛总结弹窗 ======================
-    showXiZhaoSummaryModal: function (wins, matches, rewards, moodDelta, teamDelta, spiritDelta, relationDelta) {
+    showXiZhaoSummaryModal: function (wins, matches, moodDelta, teamDelta, spiritDelta, relationDelta) {
         // 关闭所有弹窗
         this.closeAllModals();
 
@@ -1464,7 +1464,7 @@ const UI = {
             })
             .join('');
 
-        // 奖励格子
+        // 生成奖励格子，有变化的才显示
         let rewardItems = [];
         if (moodDelta !== 0) {
             rewardItems.push(`
@@ -1515,7 +1515,7 @@ const UI = {
                   )}, 1fr); gap:5px; margin-top:8px;">${rewardItems.join('')}</div>`
                 : '';
 
-        // 评语
+        // 根据胜场数确定评语
         let comment = '';
         if (wins === 3) comment = '🎉 恭喜夺冠！球队士气大振！';
         else if (wins === 2) comment = '✨ 表现不错，明年再战！';
@@ -1576,8 +1576,8 @@ const UI = {
             <div style="color: #FFD700; font-weight: bold; font-size: 16px;">恭喜获得曦照赛${
                 wins === 3 ? '冠军' : wins === 2 ? '亚军' : '季军'
             }！</div>
-            <div style="color: #e24070; font-size: 14px; font-weight: bold; margin-top: 5px;">✨ 成功进军全国大赛！ ✨</div>
-            <div style="color: #666; font-size: 12px; margin-top: 8px;">7月1日，全国女子棒球城市联赛见！</div>
+            <div style="color: #e24070; font-size: 14px; font-weight: bold; margin-top: 5px;">✨ 自动获得全国大赛参赛资格！ ✨</div>
+            <div style="color: #666; font-size: 12px; margin-top: 8px;">7月1日，全国女子棒球锦标赛见！</div>
         </div>
         `
                 : ''

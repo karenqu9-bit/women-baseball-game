@@ -827,6 +827,10 @@ const Game = {
         let index = this.state.playerList.findIndex((p) => p.id === leaver.id);
         if (index === -1) return;
 
+        // 保存旧的状态
+        let oldMood = this.state.mood; // ← 记录旧气氛
+        let oldTeamLevel = this.state.teamLevel; // ← 记录旧球队实力
+
         let negativeRelations = [];
         this.state.playerList.forEach((other) => {
             if (other.id === leaver.id) return;
@@ -839,13 +843,10 @@ const Game = {
             }
         });
 
-        // 重要：在移除球员前，先处理小团体（只留这一次）
+        // 重要：在移除球员前，先处理小团体
         if (leaver.faction) {
             this.handleFactionDeparture(leaver);
         }
-
-        // 保存旧的球队实力
-        let oldTeamLevel = this.state.teamLevel;
 
         // 移除球员
         this.state.playerList.splice(index, 1);
@@ -866,7 +867,7 @@ const Game = {
             negativeRelations: negativeRelations,
         });
 
-        // 处理其他球员的反应
+        // 处理其他球员的反应（会影响关系）
         this.state.playerList.forEach((p) => {
             if (p.id === culprit.id) return;
 
@@ -894,17 +895,19 @@ const Game = {
             delete p.relationships[leaver.id];
         });
 
-        // 计算变化量
-        let moodDelta = -this.randomDelta(5, 10);
+        // 计算人际关系变化
         let relationDelta = -this.randomDelta(3, 8);
-        this.state.mood += moodDelta;
         this.state.relation += relationDelta;
 
-        // 更新球队实力并计算差值
+        // ===== 关键：重新计算球队实力和气氛 =====
         this.updateTeamLevel();
-        let teamLevelDelta = this.state.teamLevel - oldTeamLevel;
+        this.updateMoodFromRelationships(); // ← 重新计算气氛
 
-        // 显示浮动数字
+        // 计算实际变化量
+        let teamLevelDelta = this.state.teamLevel - oldTeamLevel;
+        let moodDelta = this.state.mood - oldMood; // ← 计算气氛变化
+
+        // 显示浮动数字（包括气氛）
         UI.showFloat('mood', moodDelta);
         UI.showFloat('relation', relationDelta);
         UI.showFloat('teamLevel', teamLevelDelta);
@@ -913,14 +916,14 @@ const Game = {
         UI.updatePlayersList();
         UI.renderRelationshipNetwork();
 
-        // 记录日志（只保留这一个）
+        // 记录日志（包括气氛）
         UI.addLog(`🚪 ${leaver.name} 离开了球队`, {
             mood: moodDelta,
             relation: relationDelta,
             teamLevel: teamLevelDelta,
         });
 
-        // 显示离队弹窗
+        // 显示离队弹窗（包括气氛）
         UI.showEventModal(
             '😢 队员离队',
             `${leaver.name} 因为与 ${culprit.name} 的矛盾无法调和，最终选择离开球队。<br><br>` +
@@ -1612,6 +1615,10 @@ const Game = {
 
         console.log('处理小团体离队:', leaver.name, faction);
 
+        // 保存旧的状态
+        let oldMood = this.state.mood;
+        let oldTeamLevel = this.state.teamLevel;
+
         // 1. 从小团体中移除离队者
         const memberIndex = faction.members.findIndex((m) => m && m.id === leaver.id);
         if (memberIndex !== -1) {
@@ -1672,21 +1679,12 @@ const Game = {
             }
         }
 
-        // 3. 离队对全队的影响
-        let moodDelta = -Game.randomDelta(15, 25);
+        // 3. 离队对全队的影响（人际关系和精力）
         let relationDelta = -Game.randomDelta(10, 20);
-        let teamDelta = -Game.randomDelta(5, 15);
         let spiritDelta = this.applySpiritChange(-Game.randomDelta(20, 30));
 
-        this.state.mood += moodDelta;
         this.state.relation += relationDelta;
-        this.state.teamLevel += teamDelta;
         this.state.spirit += spiritDelta;
-
-        UI.showFloat('mood', moodDelta);
-        UI.showFloat('relation', relationDelta);
-        UI.showFloat('teamLevel', teamDelta);
-        UI.showFloat('spirit', spiritDelta);
 
         // 4. 外部球员对离队的反应
         this.state.playerList.forEach((p) => {
@@ -1716,21 +1714,43 @@ const Game = {
             }
         });
 
-        // 5. 强制刷新UI
+        // 5. 重新计算球队实力和气氛（基于所有变化）
+        this.updateTeamLevel();
+        this.updateMoodFromRelationships();
+
+        // 6. 计算实际变化量
+        let teamDelta = this.state.teamLevel - oldTeamLevel;
+        let moodDelta = this.state.mood - oldMood;
+
+        // 7. 显示浮动数字（包括间接影响的气氛变化）
+        UI.showFloat('mood', moodDelta);
+        UI.showFloat('teamLevel', teamDelta);
+        UI.showFloat('relation', relationDelta);
+        UI.showFloat('spirit', spiritDelta);
+
+        // 8. 强制刷新UI
         UI.updatePlayersList();
         UI.renderFactionsList();
         UI.renderRelationshipNetwork();
 
-        // 6. 显示离队影响弹窗
+        // 9. 记录日志（包括间接影响的气氛变化）
+        UI.addLog(`🚪 ${leaver.name} 离开了球队`, {
+            mood: moodDelta,
+            relation: relationDelta,
+            teamLevel: teamDelta,
+            spirit: spiritDelta,
+        });
+
+        // 10. 显示离队影响弹窗（显示实际的气氛变化）
         if (faction && faction.members.length > 1) {
             UI.showEventModal(
                 '😢 小团体成员离队',
                 `${leaver.name}离队给球队带来了巨大冲击。<br><br>` +
                     `<strong>影响：</strong><br>` +
-                    `• 队内气氛: ${moodDelta}<br>` +
-                    `• 人际关系: ${relationDelta}<br>` +
-                    `• 球队实力: ${teamDelta}<br>` +
-                    `• 你的精力: ${spiritDelta}<br><br>` +
+                    `• 队内气氛: ${moodDelta > 0 ? '+' : ''}${moodDelta}<br>` +
+                    `• 人际关系: ${relationDelta > 0 ? '+' : ''}${relationDelta}<br>` +
+                    `• 球队实力: ${teamDelta > 0 ? '+' : ''}${teamDelta}<br>` +
+                    `• 你的精力: ${spiritDelta > 0 ? '+' : ''}${spiritDelta}<br><br>` +
                     `<strong>小团体剩余成员:</strong> 忠诚度大幅下降，球技下滑`,
                 [{ text: '......', run: function () {} }]
             );
@@ -1779,10 +1799,11 @@ const Game = {
             player.loyalty = 0;
             const index = this.state.playerList.findIndex((p) => p.id === player.id);
             if (index !== -1) {
-                // 保存旧的球队实力
+                // 保存旧的状态
+                let oldMood = this.state.mood; // ← 新增
                 let oldTeamLevel = this.state.teamLevel;
 
-                // 先处理小团体（只留这一次）
+                // 先处理小团体
                 if (player.faction) {
                     this.handleFactionDeparture(player);
                 }
@@ -1790,49 +1811,25 @@ const Game = {
                 const removed = this.state.playerList.splice(index, 1)[0];
                 this.state.seasonLeaveCount++;
 
-                let negativeRelations = [];
-                this.state.playerList.forEach((other) => {
-                    if (other.id === removed.id) return;
-                    let rel = this.getRelationshipValue(removed, other);
-                    if (rel < 0) {
-                        negativeRelations.push({
-                            playerId: other.id,
-                            value: rel,
-                        });
-                    }
-                });
-
-                this.state.departedPlayersHistory.push({
-                    id: removed.id,
-                    name: removed.name,
-                    joinDate: removed.joinDate,
-                    leaveDate: this.formatDate(this.state.currentDate),
-                    loyalty: removed.loyalty,
-                    skill: removed.skill,
-                    personality: removed.personality,
-                    introducerId: removed.introducerId,
-                    introducerName: removed.introducerName,
-                });
+                // ... 其他代码（departedPlayersHistory等）...
 
                 UI.renderFactionsList();
 
-                // 计算气氛和人际关系的变化量（这些还是用预估的）
-                const moodDelta = -this.randomDelta(3, 8);
+                // 人际关系变化
                 const relationDelta = -this.randomDelta(2, 5);
-
-                this.state.mood += moodDelta;
                 this.state.relation += relationDelta;
 
-                // 更新球队实力（重新计算）
+                // ===== 重新计算球队实力和气氛 =====
                 this.updateTeamLevel();
+                this.updateMoodFromRelationships(); // ← 新增
 
-                // 计算球队实力的实际变化量
                 let teamLevelDelta = this.state.teamLevel - oldTeamLevel;
+                let moodDelta = this.state.mood - oldMood; // ← 计算气氛变化
 
-                // 记录日志（用实际变化量）
+                // 记录日志（加入 mood）
                 UI.addLog(`🚪 ${removed.name} 忠诚度归零，离开了球队`, {
                     mood: moodDelta,
-                    teamLevel: teamLevelDelta, // ✓ 用实际值
+                    teamLevel: teamLevelDelta,
                     relation: relationDelta,
                 });
 
@@ -1840,21 +1837,21 @@ const Game = {
                 this.state.playerWarningShown.delete(removed.id);
                 this.checkGameOver();
 
-                // 显示弹窗（用实际变化量）
+                // 显示弹窗（加入 mood）
                 UI.showInfoModal(
                     '😢 队员离队',
                     `${removed.name} 因为忠诚度完全丧失，选择离开球队。<br><br>` +
                         `<strong>离队带来的影响：</strong><br>` +
                         `• 队内气氛: ${moodDelta > 0 ? '+' : ''}${moodDelta}<br>` +
-                        `• 球队实力: ${teamLevelDelta > 0 ? '+' : ''}${teamLevelDelta}<br>` + // ✓ 用实际值
+                        `• 球队实力: ${teamLevelDelta > 0 ? '+' : ''}${teamLevelDelta}<br>` +
                         `• 人际关系: ${relationDelta > 0 ? '+' : ''}${relationDelta}<br>` +
                         `• 当前队员数: ${this.state.playerList.length}人`,
                     { buttonText: '我知道了' }
                 );
 
-                // 显示浮动数字（统一用实际变化量）
+                // 显示浮动数字（加入 mood）
                 UI.showFloat('mood', moodDelta);
-                UI.showFloat('teamLevel', teamLevelDelta); // ✓ 用实际值
+                UI.showFloat('teamLevel', teamLevelDelta);
                 UI.showFloat('relation', relationDelta);
             }
             return true;
@@ -1963,46 +1960,36 @@ const Game = {
         if (!this.state.gameStarted || this.state.gameOver) return;
 
         if (this.state.skillLowEffectActive) {
+            // 只影响人际关系
             let relationDelta = -this.randomDelta(2, 5);
             this.state.relation += relationDelta;
-            let moodDelta = -this.randomDelta(2, 5);
-            this.state.mood += moodDelta;
-            let teamDelta = -this.randomDelta(2, 5);
-            this.state.teamLevel += teamDelta;
+
+            // ❌ 删除所有其他影响
+            // let moodDelta = ...
+            // let teamDelta = ...
+            // 球员忠诚度变化...
 
             UI.showFloat('relation', relationDelta);
-            UI.showFloat('mood', moodDelta);
-            UI.showFloat('teamLevel', teamDelta);
-            UI.addLog('⚠️ 创始人球技过低，球队状态下滑', {
+
+            UI.addLog('⚠️ 创始人球技过低，人际关系下滑', {
                 relation: relationDelta,
-                mood: moodDelta,
-                teamLevel: teamDelta,
             });
         }
 
         if (this.state.teamLevelLowEffectActive) {
+            // 只影响人际关系
             let relationDelta = -this.randomDelta(5, 10);
             this.state.relation += relationDelta;
-            let moodDelta = -this.randomDelta(5, 10);
-            this.state.mood += moodDelta;
+
+            // ❌ 删除所有其他影响
+            // let moodDelta = ...
+            // 球员忠诚度变化...
 
             UI.showFloat('relation', relationDelta);
-            UI.showFloat('mood', moodDelta);
-            UI.addLog('⚠️ 球队实力过低，全队士气低落', { relation: relationDelta, mood: moodDelta });
 
-            if (this.state.playerList.length > 0) {
-                let count = Math.min(3, this.state.playerList.length);
-                let shuffled = [...this.state.playerList].sort(() => 0.5 - Math.random());
-                for (let i = 0; i < count; i++) {
-                    let p = shuffled[i];
-                    let loyaltyDelta = -this.randomDelta(5, 10);
-                    p.loyalty = Math.max(0, p.loyalty + loyaltyDelta);
-                    setTimeout(() => UI.showPlayerFloat(p.id, 'loyalty', loyaltyDelta), 20 + i * 10);
-                    UI.addLog(`⚠️ ${p.name}忠诚度${loyaltyDelta}`, {});
-                    this.checkPlayerLoyaltyAndWarn(p);
-                }
-            }
-            UI.updatePlayersList();
+            UI.addLog('⚠️ 球队实力过低，人际关系下滑', {
+                relation: relationDelta,
+            });
         }
     },
 
@@ -2116,11 +2103,12 @@ const Game = {
     },
 
     // ====================== 赛季总结弹窗 ======================
+    // ====================== 赛季总结弹窗 ======================
     showSeasonSummary: function () {
         this.state.isEventActive = true;
         UI.updateButtons();
 
-        let oldMood = this.state.mood; // 保存旧的 mood
+        let oldMood = this.state.mood;
         let oldSkill = this.state.skill;
         let oldRelation = this.state.relation;
         let oldTeamLevel = this.state.teamLevel;
@@ -2135,60 +2123,85 @@ const Game = {
         let spiritBonus = 0;
         let skillBonus = 0;
         let relationBonus = 0;
-        let moodBonus = 0;
         let teamLevelBonus = 0;
 
         // 胜率奖励
         if (winRate >= 60) {
             spiritBonus += 20;
-            moodBonus += 15;
-            teamLevelBonus += 10;
+            skillBonus += 8; // 创始人球技奖励
+            relationBonus += 10;
+            // teamLevelBonus 删除，通过球员成长间接影响
         } else if (winRate >= 40) {
             spiritBonus += 10;
-            moodBonus += 8;
-            teamLevelBonus += 5;
+            skillBonus += 5;
+            relationBonus += 5;
         } else if (winRate >= 20) {
             spiritBonus += 5;
-            moodBonus += 3;
+            skillBonus += 2;
+            relationBonus += 2;
         } else {
             spiritBonus -= 5;
-            moodBonus -= 8;
+            skillBonus -= 3;
+            relationBonus -= 3;
         }
 
         // 人员变动影响
         if (netChange > 0) {
             relationBonus += netChange * 3;
-            moodBonus += netChange * 2;
+            spiritBonus += netChange * 2; // 新人加入让创始人更有精神
         } else if (netChange < 0) {
             relationBonus += netChange * 4;
-            moodBonus += netChange * 3;
+            spiritBonus += netChange * 3; // 人员流失打击精神
         }
 
         // 比赛场次奖励
         if (totalMatches >= 5) {
             skillBonus += 5;
-            teamLevelBonus += 3;
+            spiritBonus += 5; // 多比赛积累经验，精神更好
         }
 
-        // 应用奖励到属性
+        // 应用奖励到创始人属性
         this.state.spirit += spiritBonus;
         this.state.skill += skillBonus;
         this.state.relation += relationBonus;
-        this.state.teamLevel += teamLevelBonus;
+        // this.state.teamLevel += teamLevelBonus;  // 删除，不直接加
 
-        // 赛季总结也会影响球员关系和忠诚度
+        // 赛季总结影响球员
         if (winRate >= 60) {
-            // 高胜率赛季，球员之间关系变好
+            // 高胜率赛季：全员成长
+            this.batchUpdatePlayers(
+                this.state.playerList,
+                () => this.randomDelta(5, 10), // 忠诚度 +5~10
+                () => this.randomDelta(3, 7) // 球技 +3~7
+            );
+
+            // 关系提升
             for (let i = 0; i < this.state.playerList.length; i++) {
                 for (let j = i + 1; j < this.state.playerList.length; j++) {
                     let relDelta = this.randomDelta(2, 5);
                     this.modifyRelationship(this.state.playerList[i], this.state.playerList[j], relDelta);
                 }
             }
-            // 全员忠诚度上升
-            this.batchUpdatePlayers(this.state.playerList, () => this.randomDelta(5, 10), null);
+        } else if (winRate >= 40) {
+            // 中胜率赛季：部分球员成长
+            let shuffled = [...this.state.playerList].sort(() => 0.5 - Math.random());
+            let improvedPlayers = shuffled.slice(0, Math.min(5, shuffled.length));
+            this.batchUpdatePlayers(
+                improvedPlayers,
+                () => this.randomDelta(3, 6), // 忠诚度 +3~6
+                () => this.randomDelta(2, 5) // 球技 +2~5
+            );
         } else if (winRate <= 20) {
-            // 低胜率赛季，球员之间关系变差
+            // 低胜率赛季：部分球员下降
+            let shuffled = [...this.state.playerList].sort(() => 0.5 - Math.random());
+            let affectedPlayers = shuffled.slice(0, Math.min(3, shuffled.length));
+            this.batchUpdatePlayers(
+                affectedPlayers,
+                () => -this.randomDelta(5, 10), // 忠诚度 -5~10
+                () => -this.randomDelta(2, 4) // 球技 -2~4
+            );
+
+            // 关系变差
             for (let i = 0; i < this.state.playerList.length; i++) {
                 for (let j = i + 1; j < this.state.playerList.length; j++) {
                     if (Math.random() < 0.3) {
@@ -2197,13 +2210,10 @@ const Game = {
                     }
                 }
             }
-            // 部分球员忠诚度下降
-            let shuffled = [...this.state.playerList].sort(() => 0.5 - Math.random());
-            let affectedPlayers = shuffled.slice(0, Math.min(3, shuffled.length));
-            this.batchUpdatePlayers(affectedPlayers, () => -this.randomDelta(5, 10), null);
         }
 
-        // 重新计算 mood（基于所有关系变化）
+        // 重新计算球队实力和气氛
+        this.updateTeamLevel();
         this.updateMoodFromRelationships();
 
         // 计算实际变化量
@@ -2213,7 +2223,7 @@ const Game = {
         let teamDelta = this.state.teamLevel - oldTeamLevel;
         let spiritDelta = this.state.spirit - oldSpirit;
 
-        // 显示浮动数值（用实际变化量）
+        // 显示浮动数值
         if (spiritDelta !== 0) UI.showFloat('spirit', spiritDelta);
         if (skillDelta !== 0) UI.showFloat('skill', skillDelta);
         if (relationDelta !== 0) UI.showFloat('relation', relationDelta);
@@ -2229,115 +2239,113 @@ const Game = {
 
         // 构建赛季总结弹窗
         let desc = `
-                <div style="text-align:center;">
-                    <div style="font-size:22px; font-weight:bold; color:#e24070; margin:10px 0;">
-                        🏆 第 ${seasonNumber} 赛季
+        <div style="text-align:center;">
+            <div style="font-size:22px; font-weight:bold; color:#e24070; margin:10px 0;">
+                🏆 第 ${seasonNumber} 赛季
+            </div>
+            
+            <div style="background:#fef2f4; padding:15px; border-radius:12px; margin:15px 0;">
+                <div style="font-size:14px; color:#718096; margin-bottom:5px;">赛季胜率</div>
+                <div style="font-size:36px; font-weight:bold; color:${resultColor}; margin:5px 0;">
+                    ${winRate}%
+                </div>
+                <div style="font-size:16px; font-weight:bold; color:${resultColor};">
+                    ${resultTitle}
+                </div>
+                <div style="display:flex; justify-content:center; gap:20px; margin-top:10px; font-size:13px;">
+                    <span>${this.state.seasonWinCount}胜 ${totalMatches - this.state.seasonWinCount}负</span>
+                    <span>${totalMatches}场</span>
+                </div>
+            </div>
+            
+            <div style="background:#f8f9fa; padding:12px; border-radius:8px; margin:15px 0;">
+                <div style="font-weight:bold; color:#2d3748; margin-bottom:8px;">人员变动</div>
+                <div style="display:flex; justify-content:space-around;">
+                    <div>
+                        <div style="font-size:12px; color:#718096;">加入</div>
+                        <div style="font-size:20px; font-weight:bold; color:#22c55e;">+${
+                            this.state.seasonJoinCount
+                        }</div>
                     </div>
-                    
-                    <div style="background:#fef2f4; padding:15px; border-radius:12px; margin:15px 0;">
-                        <div style="font-size:14px; color:#718096; margin-bottom:5px;">赛季胜率</div>
-                        <div style="font-size:36px; font-weight:bold; color:${resultColor}; margin:5px 0;">
-                            ${winRate}%
-                        </div>
-                        <div style="font-size:16px; font-weight:bold; color:${resultColor};">
-                            ${resultTitle}
-                        </div>
-                        <div style="display:flex; justify-content:center; gap:20px; margin-top:10px; font-size:13px;">
-                            <span>${this.state.seasonWinCount}胜 ${totalMatches - this.state.seasonWinCount}负</span>
-                            <span>${totalMatches}场</span>
-                        </div>
+                    <div>
+                        <div style="font-size:12px; color:#718096;">离队</div>
+                        <div style="font-size:20px; font-weight:bold; color:#ef4444;">-${
+                            this.state.seasonLeaveCount
+                        }</div>
                     </div>
-                    
-                    <div style="background:#f8f9fa; padding:12px; border-radius:8px; margin:15px 0;">
-                        <div style="font-weight:bold; color:#2d3748; margin-bottom:8px;">人员变动</div>
-                        <div style="display:flex; justify-content:space-around;">
-                            <div>
-                                <div style="font-size:12px; color:#718096;">加入</div>
-                                <div style="font-size:20px; font-weight:bold; color:#22c55e;">+${
-                                    this.state.seasonJoinCount
-                                }</div>
-                            </div>
-                            <div>
-                                <div style="font-size:12px; color:#718096;">离队</div>
-                                <div style="font-size:20px; font-weight:bold; color:#ef4444;">-${
-                                    this.state.seasonLeaveCount
-                                }</div>
-                            </div>
-                            <div>
-                                <div style="font-size:12px; color:#718096;">总人数</div>
-                                <div style="font-size:20px; font-weight:bold; color:${
-                                    netChange >= 0 ? '#22c55e' : '#ef4444'
-                                };">
-                                    ${netChange >= 0 ? '+' + netChange : netChange}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin:15px 0;">
-                        <div style="font-weight:bold; color:#2d3748; margin-bottom:8px; text-align:left;">🎁 赛季奖励</div>
-                        <div style="background:white; border:1px solid #ffe0e5; border-radius:8px; padding:10px;">
-                            <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
-                                ${
-                                    spiritDelta !== 0
-                                        ? `<span style="background:#f8f9fa; padding:4px 8px; border-radius:4px; font-size:12px;">精神力 ${
-                                              spiritDelta > 0 ? '+' + spiritDelta : spiritDelta
-                                          }</span>`
-                                        : ''
-                                }
-                                ${
-                                    skillDelta !== 0
-                                        ? `<span style="background:#f8f9fa; padding:4px 8px; border-radius:4px; font-size:12px;">球技 ${
-                                              skillDelta > 0 ? '+' + skillDelta : skillDelta
-                                          }</span>`
-                                        : ''
-                                }
-                                ${
-                                    relationDelta !== 0
-                                        ? `<span style="background:#f8f9fa; padding:4px 8px; border-radius:4px; font-size:12px;">人际关系 ${
-                                              relationDelta > 0 ? '+' + relationDelta : relationDelta
-                                          }</span>`
-                                        : ''
-                                }
-                                ${
-                                    moodDelta !== 0
-                                        ? `<span style="background:#f8f9fa; padding:4px 8px; border-radius:4px; font-size:12px;">队内气氛 ${
-                                              moodDelta > 0 ? '+' + moodDelta : moodDelta
-                                          }</span>`
-                                        : ''
-                                }
-                                ${
-                                    teamDelta !== 0
-                                        ? `<span style="background:#f8f9fa; padding:4px 8px; border-radius:4px; font-size:12px;">球队实力 ${
-                                              teamDelta > 0 ? '+' + teamDelta : teamDelta
-                                          }</span>`
-                                        : ''
-                                }
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="match-highlight" style="margin-top:15px; text-align:left;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size:18px;">${
-                                winRate >= 60 ? '🏆' : winRate >= 40 ? '📈' : winRate >= 20 ? '💪' : '🌧️'
-                            }</span>
-                            <span style="font-weight:bold; color:#e24070;">赛季评语</span>
-                        </div>
-                        <div style="margin-top:8px; font-size:13px; color:#2d3748;">
-                            ${
-                                winRate >= 60
-                                    ? '本赛季表现优异！球队整体实力大幅提升！'
-                                    : winRate >= 40
-                                    ? '中规中矩的一个赛季，保持稳定就是胜利。'
-                                    : winRate >= 20
-                                    ? '虽然战绩不佳，但积累了宝贵经验。'
-                                    : '需要好好反思，下个赛季重新出发。'
-                            }
+                    <div>
+                        <div style="font-size:12px; color:#718096;">净变化</div>
+                        <div style="font-size:20px; font-weight:bold; color:${netChange >= 0 ? '#22c55e' : '#ef4444'};">
+                            ${netChange >= 0 ? '+' + netChange : netChange}
                         </div>
                     </div>
                 </div>
-            `;
+            </div>
+            
+            <div style="margin:15px 0;">
+                <div style="font-weight:bold; color:#2d3748; margin-bottom:8px; text-align:left;">🎁 赛季奖励</div>
+                <div style="background:white; border:1px solid #ffe0e5; border-radius:8px; padding:10px;">
+                    <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
+                        ${
+                            spiritDelta !== 0
+                                ? `<span style="background:#f8f9fa; padding:4px 8px; border-radius:4px; font-size:12px;">精神力 ${
+                                      spiritDelta > 0 ? '+' + spiritDelta : spiritDelta
+                                  }</span>`
+                                : ''
+                        }
+                        ${
+                            skillDelta !== 0
+                                ? `<span style="background:#f8f9fa; padding:4px 8px; border-radius:4px; font-size:12px;">球技 ${
+                                      skillDelta > 0 ? '+' + skillDelta : skillDelta
+                                  }</span>`
+                                : ''
+                        }
+                        ${
+                            relationDelta !== 0
+                                ? `<span style="background:#f8f9fa; padding:4px 8px; border-radius:4px; font-size:12px;">人际关系 ${
+                                      relationDelta > 0 ? '+' + relationDelta : relationDelta
+                                  }</span>`
+                                : ''
+                        }
+                        ${
+                            moodDelta !== 0
+                                ? `<span style="background:#f8f9fa; padding:4px 8px; border-radius:4px; font-size:12px;">队内气氛 ${
+                                      moodDelta > 0 ? '+' + moodDelta : moodDelta
+                                  }</span>`
+                                : ''
+                        }
+                        ${
+                            teamDelta !== 0
+                                ? `<span style="background:#f8f9fa; padding:4px 8px; border-radius:4px; font-size:12px;">球队实力 ${
+                                      teamDelta > 0 ? '+' + teamDelta : teamDelta
+                                  }</span>`
+                                : ''
+                        }
+                    </div>
+                </div>
+            </div>
+            
+            <div class="match-highlight" style="margin-top:15px; text-align:left;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:18px;">${
+                        winRate >= 60 ? '🏆' : winRate >= 40 ? '📈' : winRate >= 20 ? '💪' : '🌧️'
+                    }</span>
+                    <span style="font-weight:bold; color:#e24070;">赛季评语</span>
+                </div>
+                <div style="margin-top:8px; font-size:13px; color:#2d3748;">
+                    ${
+                        winRate >= 60
+                            ? '本赛季表现优异！球队整体实力大幅提升！'
+                            : winRate >= 40
+                            ? '中规中矩的一个赛季，保持稳定就是胜利。'
+                            : winRate >= 20
+                            ? '虽然战绩不佳，但积累了宝贵经验。'
+                            : '需要好好反思，下个赛季重新出发。'
+                    }
+                </div>
+            </div>
+        </div>
+    `;
 
         UI.showChoiceModal(`📋 第 ${seasonNumber} 赛季总结`, desc, [
             {
@@ -2356,7 +2364,6 @@ const Game = {
             },
         ]);
     },
-    // ====================== 游戏结束检查 ======================
     // ====================== 游戏结束检查 ======================
     checkGameOver: function () {
         if (this.state.gameOver) return;
@@ -2740,10 +2747,9 @@ const Game = {
                     text: '❌ 放弃参赛',
                     run: () => {
                         this.state.willJoinXiZhao = false;
-                        this.state.mood -= 5;
                         UI.showFloat('mood', -5);
-                        UI.addLog('🚫 放弃参加曦照赛', { mood: -5 });
-                        UI.showResultModal('❌ 放弃参赛', '大家有点遗憾。', { mood: -5 });
+                        UI.addLog('🚫 放弃参加曦照赛');
+                        UI.showResultModal('❌ 放弃参赛', '大家有点遗憾。');
                         // ✅ 添加：放弃后也释放锁定
                         UI.modalState.xiZhaoActive = false;
                         this.state.isEventActive = false;
@@ -2891,12 +2897,12 @@ const Game = {
         // ===== 结束 =====
         let rewards =
             wins === 3
-                ? { mood: 40, teamLevel: 30, spirit: 25, relation: 30 }
+                ? { spirit: 25, relation: 30 }
                 : wins === 2
-                ? { mood: 25, teamLevel: 18, spirit: 15, relation: 18 }
+                ? { spirit: 15, relation: 18 }
                 : wins === 1
-                ? { mood: 12, teamLevel: 8, spirit: 8, relation: 10 }
-                : { mood: -10, teamLevel: -5, spirit: -8, relation: -5 };
+                ? { spirit: 8, relation: 10 }
+                : { spirit: -8, relation: -5 };
 
         if (wins >= 2) {
             this.matchVictoryRelationships();
@@ -2904,7 +2910,6 @@ const Game = {
             this.matchLossRelationships();
         }
 
-        this.state.teamLevel += rewards.teamLevel || 0;
         this.state.spirit += rewards.spirit || 0;
         this.state.relation += rewards.relation || 0;
 
@@ -3972,7 +3977,6 @@ const Game = {
             // 更新创始人属性
             this.state.spirit += ds;
             this.state.skill += dk;
-            this.state.mood += dm;
 
             // 更新球员属性
             let playerSkillLogs = [];
@@ -4069,7 +4073,6 @@ const Game = {
             let dm = -this.randomDelta(5, 10);
             let dr = -this.randomDelta(8, 15);
 
-            this.state.mood += dm;
             this.state.relation += dr;
 
             // 重新计算气氛（虽然失败，但关系可能已经变化）
@@ -4195,18 +4198,17 @@ const Game = {
             let rInc = this.randomDelta(3, 5);
             let mInc = this.randomDelta(3, 5);
             this.state.relation += rInc;
-            this.state.mood += mInc;
 
             UI.showFloat('spirit', ds);
             UI.showFloat('relation', rInc);
             UI.showFloat('mood', mInc);
-            UI.addLog('✅ 约友谊赛成功！人际关系和队内气氛也提升了', { spirit: ds, relation: rInc, mood: mInc });
+            UI.addLog('✅ 约友谊赛成功！人际关系提升了', { spirit: ds, relation: rInc });
 
             if (this.getActiveFactions().length > 0) {
                 this.checkResourceConflict();
             }
 
-            UI.showResultModal('✅ 约友谊赛成功', `成功约到比赛！人际关系 +${rInc}，队内气氛 +${mInc}`, {
+            UI.showResultModal('✅ 约友谊赛成功', `成功约到比赛！人际关系 +${rInc}`, {
                 relation: rInc,
                 mood: mInc,
             });
@@ -4723,15 +4725,17 @@ const Game = {
         this.state.skill = 20;
         this.state.relation = 50;
         this.state.mood = 50;
-        // ===== 新增：初始化统计 =====
+        // ===== 关键修复：重置所有日期 =====
+        const startDate = new Date(2024, 2, 8); // 2024-03-08
+        this.state.currentDate = new Date(startDate);
+        this.state.seasonStartDate = new Date(startDate);
+
         this.state.stats = {
-            maxPlayers: this.state.playerList.length, // 初始球员数
-            startDate: new Date(this.state.currentDate), // 记录开始日期
+            maxPlayers: this.state.playerList.length,
+            startDate: new Date(startDate), // 使用同一个日期
         };
         // ===== 结束 =====
-        // 时间和赛季设置
-        this.state.currentDate = new Date(2024, 2, 8);
-        this.state.seasonStartDate = new Date(2024, 2, 8);
+
         this.state.isWeekend = this.checkIfWeekend();
         this.state.weekdayActionsLeft = 5;
         this.state.hasBookedFriendlyMatch = false;

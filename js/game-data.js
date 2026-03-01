@@ -1682,16 +1682,21 @@ const RANDOM_EVENT_POOL = [
             {
                 text: '📸 接受采访',
                 run: function (state) {
-                    let oldMood = state.mood;
-                    let oldTeamLevel = state.teamLevel; // 保存旧的 mood
-
+                    // ===== 删除不需要的变量 =====
+                    // let oldMood = state.mood;
+                    // let oldTeamLevel = state.teamLevel;
+                    
+                    // 人际关系提升
                     let rInc = Game.randomDelta(3, 7);
                     state.relation += rInc;
-
-                    // 采访后球员感到自豪
+                
+                    // 采访后球员感到自豪（忠诚度提升）
+                    let affectedCount = 0;
                     if (state.playerList.length > 0) {
                         let shuffled = [...state.playerList].sort(() => 0.5 - Math.random());
                         let affectedPlayers = shuffled.slice(0, Math.min(3, shuffled.length));
+                        affectedCount = affectedPlayers.length;
+                        
                         affectedPlayers.forEach((p) => {
                             let loyaltyDelta = Game.randomDelta(2, 4);
                             p.loyalty = Math.min(100, p.loyalty + loyaltyDelta);
@@ -1700,18 +1705,24 @@ const RANDOM_EVENT_POOL = [
                             Game.checkPlayerLoyaltyAndWarn(p);
                         });
                     }
-
-                    // 重新计算 mood
-                    Game.updateMoodFromRelationships();
-                    let moodDelta = state.mood - oldMood;
-
+                    
+                    // 显示变化（只显示人际关系变化）
                     UI.showFloat('relation', rInc);
-                    UI.showFloat('mood', moodDelta);
-
-                    UI.addLog('📸 采访播出后，球队知名度上升', { relation: rInc, mood: moodDelta });
-                    UI.showResultModal('📸 接受采访', `报道发出后，有人留言说想来看你们打球！`, {
+                    
+                    // 记录日志
+                    UI.addLog('📸 接受采访，球队知名度上升', { 
                         relation: rInc,
-                        mood: moodDelta,
+                        players: affectedCount
+                    });
+                    
+                    // 显示结果弹窗
+                    let message = `报道发出后，有人留言说想来看你们打球！<br>📈 人际关系 +${rInc}`;
+                    if (affectedCount > 0) {
+                        message += `<br>👥 ${affectedCount}名球员感到自豪`;
+                    }
+                    
+                    UI.showResultModal('📸 接受采访', message, { 
+                        relation: rInc 
                     });
                 },
             },
