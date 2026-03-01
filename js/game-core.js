@@ -1013,6 +1013,34 @@ const Game = {
         return factions.filter((f) => f.members && f.members.length > 0);
     },
 
+    // ====================== 找到连通组中的中心人物 ======================
+    findCenterPlayer: function (players) {
+        if (players.length === 0) return null;
+        if (players.length === 1) return players[0];
+
+        let maxConnections = -1;
+        let centerPlayer = players[0];
+
+        players.forEach((p1) => {
+            // 计算p1在这个组里有多少个死党
+            let connections = 0;
+            players.forEach((p2) => {
+                if (p1.id !== p2.id && this.getRelationshipValue(p1, p2) >= 60) {
+                    connections++;
+                }
+            });
+
+            // 如果连接数更多，或者是相同连接数但ID更小（保持确定性）
+            if (connections > maxConnections || (connections === maxConnections && p1.id < centerPlayer.id)) {
+                maxConnections = connections;
+                centerPlayer = p1;
+            }
+        });
+
+        console.log(`【小团体】中心人物是 ${centerPlayer.name}，有 ${maxConnections} 个死党连接`);
+        return centerPlayer;
+    },
+
     // ====================== 查找所有通过死党关系连通的人 ======================
     findAllConnectedBestFriends: function (startPlayer) {
         if (!startPlayer) return [];
@@ -1063,8 +1091,13 @@ const Game = {
 
         // 情况1：没有人有小团体 - 创建新小团体
         if (existingFactions.size === 0) {
-            // 取前3个人创建小团体
-            let [a, b, c] = connectedGroup.slice(0, 3);
+            // ===== 修改：找到中心人物（和最多人是死党） =====
+            let centerPlayer = this.findCenterPlayer(connectedGroup);
+
+            // 取中心人物和另外两人（按原顺序取，但中心人物固定）
+            let otherPlayers = connectedGroup.filter((p) => p.id !== centerPlayer.id).slice(0, 2);
+            let [a, b, c] = [centerPlayer, ...otherPlayers];
+
             this.createFaction(a, b, c);
 
             // 其他剩余的人加入
@@ -1072,13 +1105,10 @@ const Game = {
                 this.joinFaction(connectedGroup[i], a.faction);
             }
 
-            UI.addLog(`🤝 ${connectedGroup.map((p) => p.name).join('、')}形成了小团体！`, {});
+            UI.addLog(`🤝 以${centerPlayer.name}为中心形成了小团体！`, {});
 
-            // ✅ 使用队列系统
-            this.queueEvent(
-                'faction',
-                `${a.name}、${b.name}、${c.name}组成了小团体！她们会互相支持，但也可能排斥他人。`
-            );
+            // 使用队列系统
+            this.queueEvent('faction', `${centerPlayer.name}的小团体成立了！她们会成为球队的核心吗？`);
             return;
         }
 
@@ -1166,27 +1196,29 @@ const Game = {
 
         let targetFaction = friend.faction;
 
-        // 检查player是否和目标小团体的所有成员都是死党（关系≥60）
-        let allMembersDead = targetFaction.members.every(
-            (member) =>
-                member.id === friend.id || // 排除friend自己，因为已经是死党
-                this.getRelationshipValue(player, member) >= 60
+        // ✅ 新逻辑：只要和朋友是死党，就直接加入
+        // 不需要检查和其他人的关系
+        this.joinFaction(player, targetFaction);
+
+        // 记录加入事件
+        UI.addLog(`👋 ${player.name}加入了${targetFaction.members[0].name}的小团体`, {});
+
+        // 检查和其他成员的关系，给出提示（非必要，但增加趣味性）
+        let notFriends = targetFaction.members.filter(
+            (m) =>
+                m.id !== friend.id &&
+                m.id !== player.id && // 排除自己
+                this.getRelationshipValue(player, m) < 30 // 关系普通或更差
         );
 
-        // 如果和所有成员都是死党，加入小团体
-        if (allMembersDead && targetFaction.members.length > 1) {
-            this.joinFaction(player, targetFaction);
-            UI.addLog(`🤝 ${player.name}和${targetFaction.members[0].name}小团体的所有成员都成了死党，顺利加入！`, {});
+        if (notFriends.length > 0) {
+            let names = notFriends.map((m) => m.name).join('、');
+            UI.addLog(`💬 ${player.name}和${names}还需要时间熟悉`, {});
         }
-        // 如果只和部分成员是死党，暂时不加入
-        else if (
-            targetFaction.members.some(
-                (member) => member.id !== friend.id && this.getRelationshipValue(player, member) >= 60
-            )
-        ) {
-            // 记录一下，但不加入
-            console.log(`${player.name}和${targetFaction.members[0].name}小团体的部分成员是死党，还需要继续努力`);
-        }
+
+        // 检查是否有人因为player的加入而触发新的关系变化
+        // 比如player的仇敌可能会因此敌视整个小团体
+        this.checkFactionJoiningEffects(player, targetFaction);
     },
 
     createFaction: function (a, b, c) {
@@ -1205,13 +1237,23 @@ const Game = {
     },
 
     joinFaction: function (player, faction) {
-        if (faction.members.includes(player)) return;
+        // 1. 先确保数组成立（防止报错）
         if (!faction.members) faction.members = [];
+
+        // 2. 检查player是否已有团体
+        if (player.faction) {
+            console.log(`${player.name}已经有小团体，不能加入`);
+            return;
+        }
+
+        // 3. 检查是否已在团里
         if (faction.members.includes(player)) return;
 
+        // 4. 加入小团体
         faction.members.push(player);
         player.faction = faction;
 
+        // 5. 日志（注意：这里用 faction.members[0] 是安全的，因为已经至少有一个成员）
         UI.addLog(`👋 ${player.name}加入了${faction.members[0].name}的小团体`, {});
         UI.renderFactionsList();
     },
