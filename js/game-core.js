@@ -2937,7 +2937,6 @@ const Game = {
         UI.showXiZhaoSummaryModal(
             wins,
             this.state.xiZhaoMatches,
-            rewards,
             moodDelta,
             teamDelta,
             spiritDelta,
