@@ -149,6 +149,13 @@ const Game = {
                 relation: 0,
             },
         },
+
+        // 在 state 对象中，与曦照赛和全国大赛放在一起
+        countdown: {
+            type: null, // 'xizhao' 或 'national'
+            targetDate: null, // 目标日期
+            daysLeft: 0, // 剩余天数
+        },
         // 球员列表
         playerList: [],
         recruitedNames: new Set(),
@@ -2506,6 +2513,43 @@ const Game = {
     },
 
     // ====================== 更新所有UI ======================
+    // ====================== 更新倒计时显示 ======================
+    updateCountdownDisplay: function () {
+        const countdownEl = document.getElementById('eventCountdown');
+        const countdownText = document.getElementById('countdownText');
+
+        if (!countdownEl || !countdownText) return;
+
+        if (!this.state.countdown || !this.state.countdown.type) {
+            countdownEl.style.display = 'none';
+            return;
+        }
+
+        // 重新计算剩余天数（考虑日期可能变化）
+        const today = new Date(this.state.currentDate);
+        const targetDate = this.state.countdown.targetDate;
+        const daysLeft = Math.ceil((targetDate - today) / (1000 * 3600 * 24));
+
+        this.state.countdown.daysLeft = daysLeft;
+
+        // 如果已经过了目标日期，隐藏倒计时
+        if (daysLeft < 0) {
+            countdownEl.style.display = 'none';
+            return;
+        }
+
+        // 根据赛事类型设置不同样式和文案
+        if (this.state.countdown.type === 'xizhao') {
+            countdownEl.className = 'countdown-bar xizhao';
+            countdownText.innerHTML = `⚾ 距离曦照女子棒球赛还有 <strong style="font-size: 20px; margin: 0 5px;">${daysLeft}</strong> 天 ⚾`;
+        } else if (this.state.countdown.type === 'national') {
+            countdownEl.className = 'countdown-bar national';
+            countdownText.innerHTML = `🏆 距离全国女子棒球锦标赛还有 <strong style="font-size: 20px; margin: 0 5px;">${daysLeft}</strong> 天 🏆`;
+        }
+
+        countdownEl.style.display = 'block';
+    },
+
     updateAll: function () {
         if (this.state.gameStarted && !this.state.gameOver) {
             const beforeCount = this.state.playerList.length;
@@ -2597,6 +2641,9 @@ const Game = {
 
         UI.renderRelationshipNetwork();
         UI.renderFactionsList();
+        // ===== 新增：更新倒计时 =====
+        this.updateCountdownDisplay();
+        // ===== 结束 =====
     },
     // ====================== 曦照赛系统 ======================
     checkXiZhaoEvent: function () {
@@ -2630,6 +2677,20 @@ const Game = {
                     text: '✅ 报名参赛',
                     run: () => {
                         this.state.willJoinXiZhao = true;
+                        // ===== 新增：设置曦照赛倒计时 =====
+                        // 当前日期是4月4日，曦照赛5月1日开始
+                        const today = new Date(this.state.currentDate);
+                        const xiZhaoDate = new Date(2024, 4, 1); // 5月1日
+                        const daysLeft = Math.ceil((xiZhaoDate - today) / (1000 * 3600 * 24));
+
+                        this.state.countdown = {
+                            type: 'xizhao',
+                            targetDate: xiZhaoDate,
+                            daysLeft: daysLeft,
+                        };
+                        this.updateCountdownDisplay();
+                        // ===== 结束 =====
+
                         UI.addLog('📝 球队成功报名曦照女子棒球赛！', {});
                         UI.showResultModal('✅ 报名成功', '报名通过了！5月1日-3日迎战！', {});
                         // ✅ 添加：报名完成后释放锁定
@@ -2679,6 +2740,13 @@ const Game = {
             default:
                 return;
         }
+        // ===== 新增：清除曦照赛倒计时（放在这里！）=====
+        // 只在第一天清除倒计时
+        if (day === 1) {
+            this.state.countdown = { type: null };
+            this.updateCountdownDisplay();
+        }
+        // ===== 结束 =====
 
         let oldMood = this.state.mood;
 
@@ -2768,8 +2836,22 @@ const Game = {
         if (wins >= 1) {
             // 前三名（1-3胜）
             this.state.national.canJoin = true;
+
+            // 设置全国赛倒计时
+            const today = new Date(this.state.currentDate); // 5月3日
+            const nationalDate = new Date(2024, 6, 1); // 7月1日
+            const daysLeft = Math.ceil((nationalDate - today) / (1000 * 3600 * 24));
+
+            this.state.countdown = {
+                type: 'national',
+                targetDate: nationalDate,
+                daysLeft: daysLeft,
+            };
+            this.updateCountdownDisplay();
+
             console.log('🎉 获得全国大赛参赛资格！');
         }
+        // ===== 结束 =====
         let rewards =
             wins === 3
                 ? { mood: 40, teamLevel: 30, spirit: 25, relation: 30 }
@@ -2839,6 +2921,10 @@ const Game = {
         this.state.national.matches = [];
         this.state.national.rewards.spirit = 0;
         this.state.national.rewards.relation = 0;
+        // ===== 新增：清除全国赛倒计时 =====
+        this.state.countdown = { type: null };
+        this.updateCountdownDisplay();
+        // ===== 结束 =====
         this.state.isEventActive = true;
 
         // 延迟一点开始第一场比赛
@@ -3057,6 +3143,40 @@ const Game = {
         }, 100);
     },
 
+    // ====================== 处理曦照赛结束 ======================
+    handleXiZhaoFinish: function () {
+        // 关闭曦照赛弹窗
+        document.getElementById('xiZhaoModal').style.display = 'none';
+        document.getElementById('xiZhaoModal').innerHTML = '';
+
+        // 设置日期到5月4日
+        this.state.currentDate = new Date(2024, 4, 4);
+        this.state.isWeekend = this.checkIfWeekend();
+        this.state.weekdayActionsLeft = 5;
+        this.state.hasBookedFriendlyMatch = false;
+        this.state.bookedThisWeek = false;
+
+        // 结束曦照赛状态
+        this.state.xiZhaoInProgress = false;
+        this.state.xiZhaoStatus = this.state.XIZHAO_STATUS.FINISHED;
+
+        this.state.isEventActive = false;
+        UI.modalState.xiZhaoActive = false;
+        UI.modalState.activeModal = null;
+
+        this.state.eventQueue = [];
+        this.state.processingQueue = false;
+
+        // 清除曦照赛倒计时，保留全国赛倒计时
+        if (this.state.countdown && this.state.countdown.type === 'xizhao') {
+            this.state.countdown = { type: null };
+            this.updateCountdownDisplay();
+        }
+
+        this.updateAll();
+        UI.updateButtons();
+    },
+
     handleNationalFinish: function () {
         // 关闭总结弹窗
         document.getElementById('nationalModal').style.display = 'none';
@@ -3072,6 +3192,10 @@ const Game = {
         // 结束全国大赛状态
         this.state.national.inProgress = false;
         this.state.isEventActive = false;
+        // ===== 新增：清除全国赛倒计时 =====
+        this.state.countdown = { type: null };
+        this.updateCountdownDisplay();
+        // ===== 结束 =====
 
         // 刷新游戏
         this.updateAll();

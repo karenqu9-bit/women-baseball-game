@@ -275,6 +275,50 @@ h1 {
     font-weight: bold;
 }
 
+/* ========== 赛事倒计时 ========== */
+.countdown-bar {
+    background: linear-gradient(90deg, #e24070, #ff8aa1);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 30px;
+    margin: 10px 0;
+    text-align: center;
+    font-weight: bold;
+    font-size: 15px;
+    box-shadow: 0 2px 8px rgba(226, 64, 112, 0.3);
+    animation: pulse 2s infinite;
+}
+
+.countdown-bar.xizhao {
+    background: linear-gradient(90deg, #e24070, #ff8aa1);
+}
+
+.countdown-bar.national {
+    background: linear-gradient(90deg, #ffd700, #ffa500);
+    color: #4a2c00;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.countdown-icon {
+    margin-right: 8px;
+    font-size: 18px;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.9;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+    100% {
+        opacity: 0.9;
+        transform: scale(1);
+    }
+}
+
 /* ========== 统计卡片 ========== */
 .stats-container {
     display: flex;

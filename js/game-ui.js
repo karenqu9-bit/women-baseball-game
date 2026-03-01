@@ -1645,30 +1645,7 @@ const UI = {
 
     // ====================== 处理曦照赛结束 ======================
     handleXiZhaoFinish: function () {
-        // 关闭曦照赛弹窗
-        document.getElementById('xiZhaoModal').style.display = 'none';
-        document.getElementById('xiZhaoModal').innerHTML = '';
-
-        // 设置日期到5月4日
-        Game.state.currentDate = new Date(2024, 4, 4);
-        Game.state.isWeekend = Game.checkIfWeekend();
-        Game.state.weekdayActionsLeft = 5;
-        Game.state.hasBookedFriendlyMatch = false;
-        Game.state.bookedThisWeek = false;
-
-        // 结束曦照赛状态
-        Game.state.xiZhaoInProgress = false;
-        Game.state.xiZhaoStatus = Game.state.XIZHAO_STATUS.FINISHED;
-        // ✨✨✨ 关键修复：确保事件状态被重置 ✨✨✨
-        Game.state.isEventActive = false;
-        this.modalState.xiZhaoActive = false;
-        this.modalState.activeModal = null;
-        // 清空可能残留的队列
-        Game.state.eventQueue = [];
-        Game.state.processingQueue = false;
-        // 刷新游戏
-        Game.updateAll();
-        this.updateButtons();
+        Game.handleXiZhaoFinish(); // 只调用 Game 的方法
     },
 
     // ====================== 关闭所有弹窗 ======================
