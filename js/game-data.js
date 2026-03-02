@@ -232,8 +232,8 @@ const RECRUIT_DATA = [
         },
     },
     {
-        name: '沈鹿',
-        personality: '兽医，跑垒速度极快，外号「小鹿」。',
+        name: '幺幺',
+        personality: '来自亚特兰蒂斯的树枝收藏家，反应迅速，训练勤快。',
         loyaltyRange: [30, 70],
         skillRange: [35, 48],
         introducerName: '阿柏',
@@ -250,8 +250,8 @@ const RECRUIT_DATA = [
         },
     },
     {
-        name: '程橙',
-        personality: '平面模特，力量型打者，挥棒姿势很好看。',
+        name: '小凤',
+        personality: '专精多种运动，爱好旅游，靠谱东北人。',
         loyaltyRange: [30, 70],
         skillRange: [50, 65],
         introducerName: '五零',
@@ -268,8 +268,8 @@ const RECRUIT_DATA = [
         },
     },
     {
-        name: '陆恬',
-        personality: '出版社编辑，性格温柔，队里的气氛调节器。',
+        name: '赵珠',
+        personality: '运气极佳的跑垒员，每次跑本垒都能下分。',
         loyaltyRange: [30, 70],
         skillRange: [15, 25],
         introducerName: '阿木',
@@ -286,8 +286,8 @@ const RECRUIT_DATA = [
         },
     },
     {
-        name: '赵荞',
-        personality: '前垒球运动员，因伤退役，想用经验帮助球队。',
+        name: '蓝三月',
+        personality: '天才大力投手，小小年纪大大心脏。',
         loyaltyRange: [30, 70],
         skillRange: [55, 68],
         introducerName: '三习',
