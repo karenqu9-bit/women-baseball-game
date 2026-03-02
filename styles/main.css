@@ -858,3 +858,10 @@ button[onclick='Game.handleTeamStuff()'] {
 .match-item.loss {
     color: #f87171;
 }
+
+/* ========== 手机简单适配 ========== */
+@media (max-width: 767px) {
+    body {
+        zoom: 0.5;  /* 整体缩小到50%，手机能看全 */
+    }
+}
