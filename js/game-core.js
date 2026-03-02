@@ -1892,7 +1892,7 @@ const Game = {
                 this.state.skillWarningShown = true;
                 UI.showInfoModal(
                     '⚠️ 球技危机',
-                    `你的球技已降至 ${this.state.skill} ！人际关系、球队实力、队内气氛每天都会下降！`,
+                    `你的球技已降至 ${this.state.skill} ！人际关系每天都会下降！`,
                     { buttonText: '我知道了' }
                 );
             }
@@ -1914,7 +1914,7 @@ const Game = {
                 this.state.teamLevelWarningShown = true;
                 UI.showInfoModal(
                     '⚠️ 球队实力危机',
-                    `球队实力已降至 ${this.state.teamLevel} ！人际关系、队内气氛、所有球员忠诚度每天都会大幅下降！`,
+                    `球队实力已降至 ${this.state.teamLevel} ！人际关系、球员忠诚度每天都会下降！`,
                     { buttonText: '我知道了' }
                 );
             }

@@ -27,17 +27,17 @@
         <div class="stats-container">
             <div class="stat-card">
                 <h3>精神力</h3>
-                <div class="stat-value" id="spirit" title="精力值：影响所有行动的消耗">0</div>
+                <div class="stat-value" id="spirit" title="精力值：进行任何行动都会消耗精力，精力归零则游戏结束。可通过摸鱼摆烂恢复">0</div>
                 <div class="stat-float" id="spiritFloat"></div>
             </div>
             <div class="stat-card">
                 <h3>球技</h3>
-                <div class="stat-value" id="skill" title="球技：影响比赛胜率和招募成功率">0</div>
+                <div class="stat-value" id="skill" title="球技：影响球队实力和比赛胜率，球技低于10影响人际关系">0</div>
                 <div class="stat-float" id="skillFloat"></div>
             </div>
             <div class="stat-card">
                 <h3>人际关系</h3>
-                <div class="stat-value" id="relation" title="人际关系：影响球员忠诚度变化速度">0</div>
+                <div class="stat-value" id="relation" title="人际关系：人际关系归零游戏结束。">0</div>
                 <div class="stat-float" id="relationFloat"></div>
             </div>
         </div>
@@ -51,21 +51,21 @@
             </div>
             <div class="stat-card">
                 <h3>队内气氛</h3>
-                <div class="stat-value" id="mood" title="队内气氛：影响比赛表现和球员忠诚度">0</div>
+                <div class="stat-value" id="mood" title="队内气氛：影响比赛胜率。基础值50，死党朋友越多分越高，仇敌竞争越多分越少.归零则游戏结束">0</div>
                 <div class="stat-float" id="moodFloat"></div>
             </div>
             <div class="stat-card">
                 <h3>球队实力</h3>
-                <div class="stat-value" id="teamLevel" title="球队实力：影响比赛胜率">0</div>
+                <div class="stat-value" id="teamLevel" title="球队实力：所有人球技平均值，影响比赛胜率。实力低于10影响人际关系和忠诚度。">0</div>
                 <div class="stat-float" id="teamLevelFloat"></div>
             </div>
         </div>
 
         <div id="skillWarningArea" class="skill-warning" style="display: none;">
-            ⚠️ 你的球技低于10！人际关系、球队实力、队内气氛每天都会下降！
+            ⚠️ 你的球技低于10！人际关系每天都会下降！
         </div>
         <div id="teamLevelWarningArea" class="team-level-warning" style="display: none;">
-            ⚠️ 球队实力低于10！人际关系、队内气氛、所有球员忠诚度每天都会大幅下降！
+            ⚠️ 球队实力低于10！人际关系、球员忠诚度每天都会下降！
         </div>
 
         <div class="action-section">
@@ -102,12 +102,6 @@
 
     <!-- 球员侧边栏 + 比赛记录 -->
     <div class="players-sidebar">
-        <h2>👥 球队成员</h2>
-        <div id="playersList" class="players-grid">
-            <div style="grid-column: 1 / -1; text-align: center; color: #718096; font-size: 13px;">
-                未开始游戏，暂无球员
-            </div>
-        </div>
 
         <!-- 关系网络可视化 -->
         <div style="margin-top:20px;">
@@ -154,6 +148,13 @@
                 <div style="color:#718096; font-size:12px; text-align:center; padding:5px;">
                     暂无小团体
                 </div>
+            </div>
+        </div>
+
+        <h2>👥 球队成员</h2>
+        <div id="playersList" class="players-grid">
+            <div style="grid-column: 1 / -1; text-align: center; color: #718096; font-size: 13px;">
+                未开始游戏，暂无球员
             </div>
         </div>
 
