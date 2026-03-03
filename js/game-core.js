@@ -462,7 +462,7 @@ const Game = {
         this.addRelationshipHistory(p1, p2, delta, current, newValue);
 
         // 检查是否成为死党
-        if (newValue >= 61 && current < 60) {
+        if (newValue >= 61 && current < 61) {
             UI.addLog(`💕 ${p1.name}和${p2.name}成为死党！`, {});
 
             // ✅ 使用队列系统，而不是直接显示弹窗
@@ -673,7 +673,7 @@ const Game = {
         console.log(`批量处理 ${changes.length} 个关系变化`);
 
         // 1. 找出所有新成为死党的关系对
-        let newDeadFriends = changes.filter((c) => c.oldValue < 60 && c.newValue >= 61);
+        let newDeadFriends = changes.filter((c) => c.oldValue < 61 && c.newValue >= 61);
 
         // 2. 如果有新死党，检查连通组
         if (newDeadFriends.length > 0) {
