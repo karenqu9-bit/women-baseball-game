@@ -462,7 +462,7 @@ const Game = {
         this.addRelationshipHistory(p1, p2, delta, current, newValue);
 
         // 检查是否成为死党
-        if (newValue >= 60 && current < 60) {
+        if (newValue >= 61 && current < 60) {
             UI.addLog(`💕 ${p1.name}和${p2.name}成为死党！`, {});
 
             // ✅ 使用队列系统，而不是直接显示弹窗
