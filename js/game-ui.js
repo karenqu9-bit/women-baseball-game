@@ -345,7 +345,7 @@ const UI = {
         let absValue = Math.abs(value);
 
         let color;
-        if (value >= 60) color = '#4299e1';
+        if (value >= 61) color = '#4299e1';
         else if (value >= 1) color = '#22c55e';
         else if (value >= -60) color = '#fbbf24';
         else color = '#b45309';
