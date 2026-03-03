@@ -1028,7 +1028,7 @@ const Game = {
             // 计算p1在这个组里有多少个死党
             let connections = 0;
             players.forEach((p2) => {
-                if (p1.id !== p2.id && this.getRelationshipValue(p1, p2) >= 60) {
+                if (p1.id !== p2.id && this.getRelationshipValue(p1, p2) >= 61) {
                     connections++;
                 }
             });
@@ -1059,13 +1059,13 @@ const Game = {
             visited.add(current.id);
             connected.push(current);
 
-            // 找出当前球员的所有死党（关系≥60）
+            // 找出当前球员的所有死党（关系≥61）
             this.state.playerList.forEach((other) => {
                 if (visited.has(other.id)) return;
                 if (other.id === current.id) return;
 
                 let relValue = this.getRelationshipValue(current, other);
-                if (relValue >= 60) {
+                if (relValue >= 61) {
                     queue.push(other);
                 }
             });
