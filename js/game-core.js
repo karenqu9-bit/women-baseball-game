@@ -357,7 +357,7 @@ const Game = {
                 totalPairs++;
 
                 // 根据关系值给分
-                if (relValue >= 60) positiveScore += 3; // 死党 +3
+                if (relValue >= 61) positiveScore += 3; // 死党 +3
                 else if (relValue >= 30) positiveScore += 1; // 朋友 +1
                 else if (relValue <= -60) negativeScore += 3; // 仇敌 -3
                 else if (relValue <= -30) negativeScore += 1; // 竞争 -1
@@ -673,7 +673,7 @@ const Game = {
         console.log(`批量处理 ${changes.length} 个关系变化`);
 
         // 1. 找出所有新成为死党的关系对
-        let newDeadFriends = changes.filter((c) => c.oldValue < 60 && c.newValue >= 60);
+        let newDeadFriends = changes.filter((c) => c.oldValue < 60 && c.newValue >= 61);
 
         // 2. 如果有新死党，检查连通组
         if (newDeadFriends.length > 0) {
@@ -1265,7 +1265,7 @@ const Game = {
     },
 
     areBestFriends: function (p1, p2) {
-        return this.getRelationshipValue(p1, p2) >= 60;
+        return this.getRelationshipValue(p1, p2) >= 61;
     },
 
     // 调试函数：打印所有球员的关系
@@ -1418,7 +1418,7 @@ const Game = {
             UI.addLog(`👋 ${recruitItem.name} 由 ${introducer.name} 介绍入队，两人成为朋友！`, {});
 
             // 如果达到死党阈值，检查小团体
-            if (initialValue >= 60) {
+            if (initialValue >= 61) {
                 // 检查新球员是否能形成新小团体
                 this.checkFactionFormation(newPlayer);
 
@@ -2422,7 +2422,7 @@ const Game = {
         for (let i = 0; i < this.state.playerList.length; i++) {
             for (let j = i + 1; j < this.state.playerList.length; j++) {
                 let value = this.getRelationshipValue(this.state.playerList[i], this.state.playerList[j]);
-                if (value >= 60) deadFriendPairs++;
+                if (value >= 61) deadFriendPairs++;
                 if (value <= -60) enemyPairs++;
             }
         }
