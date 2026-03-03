@@ -107,7 +107,7 @@ const RECRUIT_DATA = [
     },
     {
         name: '烈璇',
-        personality: '室内设计师，绰号「烈马」，内野拼劲十足。',
+        personality: '绰号「烈马」，投捕兼修，拼劲十足。',
         loyaltyRange: [30, 70],
         skillRange: [40, 52],
         introducerName: '阿木',

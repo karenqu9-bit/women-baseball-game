@@ -1383,6 +1383,8 @@ const Game = {
         let oldTeamLevel = this.state.teamLevel;
 
         this.state.playerList.push(newPlayer);
+        this.state.seasonJoinCount++;  // 新增：赛季加入人数+1
+
         // ===== 新增：更新最多球员记录 =====
         if (this.state.playerList.length > this.state.stats.maxPlayers) {
             this.state.stats.maxPlayers = this.state.playerList.length;
