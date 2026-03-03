@@ -1144,7 +1144,16 @@ const Game = {
             // 选择最大的小团体作为目标
             let factions = Array.from(existingFactions);
             let targetFaction = factions.reduce((max, f) => (f.members.length > max.members.length ? f : max));
-
+            // ===== 新增：先记录所有被合并的小团体的核心人物名字 =====
+            let mergedFactionNames = [];
+            factions.forEach((faction) => {
+                if (faction.id === targetFaction.id) return;
+                // 保存核心人物名字（第一个成员）
+                if (faction.members && faction.members.length > 0 && faction.members[0]) {
+                    mergedFactionNames.push(faction.members[0].name);
+                }
+            });
+            // ===== 结束 =====
             // 将所有其他小团体的成员合并到目标小团体
             factions.forEach((faction) => {
                 if (faction.id === targetFaction.id) return;
@@ -1162,9 +1171,14 @@ const Game = {
                         targetFaction.members.push(member);
                     }
                 });
-
-                UI.addLog(`🔄 ${faction.members[0]?.name}的小团体并入了${targetFaction.members[0].name}的小团体`, {});
             });
+            // ===== 新增：批量记录合并日志 =====
+            mergedFactionNames.forEach((name) => {
+                if (name) {
+                    UI.addLog(`🔄 ${name}的小团体并入了${targetFaction.members[0].name}的小团体`, {});
+                }
+            });
+            // ===== 结束 =====
 
             // 确保所有连通组的成员都在目标小团体中
             connectedGroup.forEach((player) => {
@@ -1383,7 +1397,7 @@ const Game = {
         let oldTeamLevel = this.state.teamLevel;
 
         this.state.playerList.push(newPlayer);
-        this.state.seasonJoinCount++;  // 新增：赛季加入人数+1
+        this.state.seasonJoinCount++; // 新增：赛季加入人数+1
 
         // ===== 新增：更新最多球员记录 =====
         if (this.state.playerList.length > this.state.stats.maxPlayers) {
@@ -1892,11 +1906,9 @@ const Game = {
         if (this.state.skill < 10) {
             if (!this.state.skillWarningShown) {
                 this.state.skillWarningShown = true;
-                UI.showInfoModal(
-                    '⚠️ 球技危机',
-                    `你的球技已降至 ${this.state.skill} ！人际关系每天都会下降！`,
-                    { buttonText: '我知道了' }
-                );
+                UI.showInfoModal('⚠️ 球技危机', `你的球技已降至 ${this.state.skill} ！人际关系每天都会下降！`, {
+                    buttonText: '我知道了',
+                });
             }
             document.getElementById('skillWarningArea').style.display = 'block';
             this.state.skillLowEffectActive = true;
@@ -2936,14 +2948,7 @@ const Game = {
         UI.showFloat('relation', relationDelta);
 
         // 使用曦照赛总结弹窗
-        UI.showXiZhaoSummaryModal(
-            wins,
-            this.state.xiZhaoMatches,
-            moodDelta,
-            teamDelta,
-            spiritDelta,
-            relationDelta
-        );
+        UI.showXiZhaoSummaryModal(wins, this.state.xiZhaoMatches, moodDelta, teamDelta, spiritDelta, relationDelta);
 
         // 记录日志
         UI.addLog(
