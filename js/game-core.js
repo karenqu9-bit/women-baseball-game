@@ -4757,6 +4757,7 @@ const Game = {
         this.state.recruitedPlayersHistory = {};
         this.state.isBestFriendsEvent = false;
         this.state._lastEventDate = null;
+        this.state.countdown = { type: null, targetDate: null, daysLeft: 0 };
 
         if (this.state.recruitedOriginalNames) {
             this.state.recruitedOriginalNames.clear();
