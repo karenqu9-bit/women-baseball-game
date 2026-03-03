@@ -345,10 +345,10 @@ const UI = {
         let absValue = Math.abs(value);
 
         let color;
-        if (value >= 60) color = '#e24070';
-        else if (value >= 1) color = '#4299e1';
-        else if (value >= -60) color = '#e67e22';
-        else color = '#ef4444';
+        if (value >= 60) color = '#4299e1';
+        else if (value >= 1) color = '#22c55e';
+        else if (value >= -60) color = '#fbbf24';
+        else color = '#b45309';
 
         let width;
         if (absValue >= 61) width = 3;
@@ -1919,7 +1919,6 @@ const UI = {
     // ====================== 全国大赛弹窗 ======================
 
     // ====================== 全国大赛单场比赛结果弹窗 ======================
-    // ====================== 全国大赛单场比赛结果弹窗 ======================
     showNationalMatchModal: function (data) {
         // 关闭其他弹窗
         this.closeAllModals();
@@ -1941,8 +1940,9 @@ const UI = {
         // 生成球员成长摘要
         let playerGrowthHtml = '';
         if (data.changes && Game.state.playerList && Game.state.playerList.length > 0) {
-            // 获取球技最高的3名球员
-            let topPlayers = [...Game.state.playerList].sort((a, b) => b.skill - a.skill).slice(0, 3);
+            // 获取随机3名球员
+            let shuffled = [...Game.state.playerList].sort(() => 0.5 - Math.random());
+            let topPlayers = shuffled.slice(0, 3);
 
             let playersHtml = '';
             for (let i = 0; i < topPlayers.length; i++) {

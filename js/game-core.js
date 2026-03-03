@@ -646,7 +646,7 @@ const Game = {
                 let p2 = this.state.playerList[j];
 
                 let current = this.getRelationshipValue(p1, p2);
-                let decrease = this.randomDelta(1, 3);
+                let decrease = this.randomDelta(1, 2);
 
                 if (current < 0) {
                     decrease += this.randomDelta(1, 2);
@@ -746,7 +746,7 @@ const Game = {
 
                 let value = this.getRelationshipValue(p1, p2);
 
-                if (value <= -61 && Math.random() < 0.1) {
+                if (value <= -61 && Math.random() < 0.08) {
                     this.triggerConflict(p1, p2, '日常摩擦');
                     conflictCount++;
                 }
@@ -4307,7 +4307,7 @@ const Game = {
 
             // 创始人属性下降
             this.state.skill += -this.randomDelta(1, 3);
-            this.state.relation += -this.randomDelta(5, 10);
+            this.state.relation += -this.randomDelta(3, 5);
 
             highlights.push(`打线仅得${teamScore}分`);
 
