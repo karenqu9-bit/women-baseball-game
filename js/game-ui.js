@@ -1577,7 +1577,7 @@ const UI = {
                 wins === 3 ? '冠军' : wins === 2 ? '亚军' : '季军'
             }！</div>
             <div style="color: #e24070; font-size: 14px; font-weight: bold; margin-top: 5px;">✨ 自动获得全国大赛参赛资格！ ✨</div>
-            <div style="color: #666; font-size: 12px; margin-top: 8px;">7月1日，全国女子棒球锦标赛见！</div>
+            <div style="color: #666; font-size: 12px; margin-top: 8px;">7月1日，全国女子棒球城市联赛见！</div>
         </div>
         `
                 : ''
