@@ -918,12 +918,11 @@ const UI = {
             }
         }
 
-        const modal = document.getElementById('resultModal');
         modal.innerHTML = `
-            <div class="event-modal-content" style="max-width: 500px; max-height: 80vh; display: flex; flex-direction: column;">
-                <h2 class="event-modal-title" style="flex-shrink: 0;">${title}</h2>
-                <div class="event-modal-desc" style="flex: 1; overflow-y: auto; padding-right: 5px;">${message}${changesHtml}</div>
-                <div class="event-modal-buttons" style="flex-shrink: 0; margin-top: 10px;">
+            <div class="event-modal-content" style="max-width: 500px;">
+                <h2 class="event-modal-title">${title}</h2>
+                <div class="event-modal-desc">${message}${changesHtml}</div>
+                <div class="event-modal-buttons" style="margin-top: 10px;">
                     <button onclick="UI.closeResultModal()" style="background:#e24070;">确定</button>
                 </div>
             </div>
