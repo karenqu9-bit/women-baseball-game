@@ -2544,9 +2544,33 @@ const Game = {
             </div>
         `;
 
-        UI.showResultModal('💔 游戏结束', desc, {});
+        // ===== 唯一需要修改的地方：把按钮的 onclick 改一下 =====
+        const modal = document.getElementById('resultModal');
+        modal.innerHTML = `
+            <div class="event-modal-content" style="max-width: 500px;">
+                <h2 class="event-modal-title" style="color: #c62828;">💔 游戏结束</h2>
+                <div class="event-modal-desc" style="max-height: none; overflow: visible; padding: 0 10px;">${desc}</div>
+                <div class="event-modal-buttons" style="margin-top: 10px;">
+                    <!-- 把原来的 UI.closeResultModal() 改成这个简单的函数 -->
+                    <button onclick="Game.simpleCloseModal()" style="background:#e24070;">确定</button>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
 
         document.getElementById('gameOverArea').innerHTML = `<div class="game-over">💔 ${reason}，游戏结束！</div>`;
+    },
+
+    // ===== 新增一个超级简单的关闭函数 =====
+    simpleCloseModal: function () {
+        const modal = document.getElementById('resultModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.innerHTML = '';
+        }
+        this.state.isEventActive = false;
+        // 不调用任何可能推进日期的函数
+        // 不更新按钮（保持禁用状态）
     },
 
     closeGameOverModal: function () {
