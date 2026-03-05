@@ -945,7 +945,7 @@ const RANDOM_EVENT_POOL = [
     },
     // 签名球
     {
-        title: '⚾ 意外获得女垒队李欢的签名球',
+        title: '⚾ 意外获得国家女垒队李欢的签名球',
         desc: '这可是珍品！是自己偷偷收藏，还是奖励给表现出色的队友？',
         choices: [
             {
@@ -2108,8 +2108,8 @@ const CONSTANTS = {
     MAX_RELATIONSHIPS_PER_PLAYER: 5,
     RECRUIT_COOLDOWN: 45,
     MAX_RANDOM_EVENT_PER_WEEK: 2,
-    MATCH_OPPONENTS: ['永远少女队', '同济女垒队', '橘子队'],
-    XIZHAO_OPPONENTS: ['永远少女队', '同济女垒队', '橘子队'],
+    MATCH_OPPONENTS: ['少女队', '同基队', '橘几队'],
+    XIZHAO_OPPONENTS: ['少女队', '同基队', '橘几队'],
     WEEKDAYS: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
     INIT_PLAYER_NAMES: ['小马', '霏霏', '老郭', '阿柏', '五零', '阿木', '三习', '之之', '贝尔'],
 };
