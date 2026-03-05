@@ -2602,7 +2602,7 @@ const Game = {
             countdownText.innerHTML = `⚾ 距离曦照女子棒球赛还有 <strong style="font-size: 20px; margin: 0 5px;">${daysLeft}</strong> 天 ⚾`;
         } else if (this.state.countdown.type === 'national') {
             countdownEl.className = 'countdown-bar national';
-            countdownText.innerHTML = `🏆 距离全国女子棒球锦标赛还有 <strong style="font-size: 20px; margin: 0 5px;">${daysLeft}</strong> 天 🏆`;
+            countdownText.innerHTML = `🏆 距离全国女子棒球城市联赛还有 <strong style="font-size: 20px; margin: 0 5px;">${daysLeft}</strong> 天 🏆`;
         }
 
         countdownEl.style.display = 'block';
