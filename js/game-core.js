@@ -100,7 +100,7 @@ const Game = {
         matchHistory: [],
 
         // 友谊赛对手池
-        matchOpponents: ['少女队', '同基队', '橘几队'],
+        matchOpponents: ['少女队', '彤姬队', '橘几队'],
 
         // 约友谊赛失败文案池
         bookFailMessages: [
@@ -129,7 +129,7 @@ const Game = {
         xiZhaoInProgress: false,
         xiZhaoStatus: 0,
         xiZhaoMatches: [],
-        xiZhaoOpponents: ['少女队', '同基队', '橘几队'],
+        xiZhaoOpponents: ['少女队', '彤姬队', '橘几队'],
 
         // 全国大赛状态
         national: {
